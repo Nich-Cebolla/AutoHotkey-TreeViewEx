@@ -13,12 +13,17 @@ class TvHitTestInfo {
         proto.offset_Y := 4
         proto.offset_flags := 8
         proto.offset_hItem := 8 + A_PtrSize * 1
+
+        proto.DefineProp('Clone', { Call: TreeViewEx_CloneBuffer })
     }
     __New(X, Y) {
         this.Buffer := Buffer(this.cbSize)
         this.X := X
         this.Y := Y
         this.flags := this.hItem := 0
+    }
+    Clone(Buf?, Offset := 0, MakeInstance := true) {
+        ; This is overridden
     }
     X {
         Get => NumGet(this.Buffer, this.offset_X, 'int')

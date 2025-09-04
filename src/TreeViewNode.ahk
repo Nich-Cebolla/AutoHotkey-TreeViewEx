@@ -17,16 +17,22 @@ class TreeViewNode {
     }
     Collapse() => SendMessage(TVM_EXPAND, TVE_COLLAPSE, this.Id, this.HwndTv)
     CollapseReset() => SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, this.Id, this.HwndTv)
+    CreateDragImage() => SendMessage(TVM_CREATEDRAGIMAGE, 0, this.Id, this.HwndTv)
     EnsureVisible() => SendMessage(TVM_ENSUREVISIBLE, 0, this.Id, this.HwndTv)
     EnumChildren(VarCount?) => this.Ctrl.EnumChildren(this.Id, VarCount ?? unset)
     EnumChildrenRecursive(VarCount?) => this.Ctrl.EnumChildrenRecursive(this.Id, VarCount ?? unset)
     Expand() => SendMessage(TVM_EXPAND, TVE_EXPAND, this.Id, this.HwndTv)
     ExpandPartial() => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, this.Id, this.HwndTv)
+    GetItemState(Mask) => SendMessage(TVM_GETITEMSTATE, this.Id, Mask, this.HwndTv)
+    GetText() => this.Ctrl.GetText(this.Id)
+    MapHTreeItemToAccId() => SendMessage(TVM_MAPHTREEITEMTOACCID, this.Id, 0, this.HwndTv)
     Select() => SendMessage(TVM_SELECTITEM, TVGN_CARET, this.Id, this.HwndTv)
     SetCollectionName(Name) => this.CollectionName := Name
+    SetInsertMark(AfterItem := false) => SendMessage(TVM_SETINSERTMARK, AfterItem, this.Id, this.HwndTv)
     SetTreeView(Hwnd) {
         this.HwndTv := Hwnd
     }
+    ShowInfoTip() => SendMessage(TVM_SHOWINFOTIP, 0, this.Id, this.HwndTv)
     SortChildren(Recursive := true) => SendMessage(TVM_SORTCHILDREN, Recursive, this.Id, this.HwndTv)
     SortChildrenCb(Callback, lParam?) => this.Ctrl.SortChildrenCb(this.Id, Callback, lParam ?? 0)
     Toggle() => SendMessage(TVM_EXPAND, TVE_TOGGLE, this.Id, this.HwndTv)

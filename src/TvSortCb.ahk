@@ -10,6 +10,8 @@
         proto.offset_hParent := 0
         proto.offset_lpfnCompare := 0 + A_PtrSize * 1
         proto.offset_lParam := 0 + A_PtrSize * 2
+
+        proto.DefineProp('Clone', { Call: TreeViewEx_CloneBuffer })
     }
     __New(hParent?, lpfnCompare?, lParam?) {
         this.Buffer := Buffer(this.cbSize)
@@ -22,6 +24,9 @@
         if IsSet(lParam) {
             this.lParam := lParam
         }
+    }
+    Clone(Buf?, Offset := 0, MakeInstance := true) {
+        ; This is overridden
     }
     hParent {
         Get => NumGet(this.Buffer, this.offset_hParent, 'ptr')

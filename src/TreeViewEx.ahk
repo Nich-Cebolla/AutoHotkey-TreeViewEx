@@ -1,4 +1,9 @@
-﻿
+﻿/*
+    Github: https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
+    Author: Nich-Cebolla
+    License: MIT
+*/
+
 ; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk
 #include <Rect>
 

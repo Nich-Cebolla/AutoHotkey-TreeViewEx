@@ -252,9 +252,12 @@ class TreeViewEx extends Gui.TreeView {
     /**
      * @param {Object} Obj - An objected with a nested structure representing nodes to be added
      * to the tree view control. The object must have a property that will be used as the node's
-     * label, and may have a property that is an array of strings or objects. The strings will be added
-     * as nodes with the string value as the label, and the objects are expected to follow this same
-     * stucture and will be added as nodes accordingly. The object will be processed recursively.
+     * label, and may have a property that is an array of strings or objects. The strings will be
+     * added as nodes with the string value as the label, and the objects are expected to follow this
+     * same stucture and will be added as nodes accordingly. The object will be processed recursively.
+     *
+     * @param {String} [Options] - A value to pass to the `Options` parameter of
+     * {@link https://www.autohotkey.com/docs/v2/lib/TreeView.htm#Add `Gui.TreeView.Prototype.Add`}.
      *
      * @param {String} [LabelProp = "Name"] - The name of the property that will be used to define
      * the node's label.
@@ -267,11 +270,8 @@ class TreeViewEx extends Gui.TreeView {
      *
      * @param {Integer} [InitialParentId = 0] - The initial Id under which to start adding items.
      * If 0, the first item is added as a root node.
-     *
-     * @param {String} [Options] - A value to pass to the `Options` parameter of
-     * {@link https://www.autohotkey.com/docs/v2/lib/TreeView.htm#Add `Gui.TreeView.Prototype.Add`}.
      */
-    AddObj(Obj, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0, Options?) {
+    AddObj(Obj, Options?, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0) {
         stack := [this.Add(Obj.%LabelProp%, InitialParentId, Options ?? unset)]
         if MaxDepth > 0 {
             if HasProp(Obj, ChildrenProp) && Obj.%ChildrenProp% is Array && stack.Length <= MaxDepth {
@@ -316,21 +316,34 @@ class TreeViewEx extends Gui.TreeView {
     }
     /**
      * See {@link TreeViewEx.Prototype.AddObj} for descriptions of the parameters.
-     * @param {Object[]} List - A list of objects as described in {@link TreeViewEx.Prototype.AddObj}.
+     * @param {Object[]|String[]} List - A list of objects or strings as described in {@link TreeViewEx.Prototype.AddObj}.
      */
-    AddObjList(List, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0, Options?) {
+    AddObjList(List, Options?, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0) {
+        stack := ['']
         if MaxDepth > 0 {
-            for Obj in List {
-                stack := [this.Add(Obj.%LabelProp%, InitialParentId, Options ?? unset)]
-                if HasProp(Obj, ChildrenProp) && Obj.%ChildrenProp% is Array && stack.Length <= MaxDepth {
-                    _ProcessMaxDepth(Obj.%ChildrenProp%)
+            for val in List {
+                if IsObject(val) {
+                    if HasProp(val, ChildrenProp) && val.%ChildrenProp% is Array && stack.Length <= MaxDepth {
+                        stack[1] := this.Add(val.%LabelProp%, InitialParentId, Options ?? unset)
+                        _ProcessMaxDepth(val.%ChildrenProp%)
+                    } else {
+                        this.Add(val.%LabelProp%, InitialParentId, Options ?? unset)
+                    }
+                } else {
+                    this.Add(val, InitialParentId, Options ?? unset)
                 }
             }
         } else {
-            for Obj in List {
-                stack := [this.Add(Obj.%LabelProp%, InitialParentId, Options ?? unset)]
-                if HasProp(Obj, ChildrenProp) && Obj.%ChildrenProp% is Array {
-                    _Process(Obj.%ChildrenProp%)
+            for val in List {
+                if IsObject(val) {
+                    if HasProp(val, ChildrenProp) && val.%ChildrenProp% is Array {
+                        stack[1] := this.Add(val.%LabelProp%, InitialParentId, Options ?? unset)
+                        _Process(val.%ChildrenProp%)
+                    } else {
+                        this.Add(val.%LabelProp%, InitialParentId, Options ?? unset)
+                    }
+                } else {
+                    this.Add(val, InitialParentId, Options ?? unset)
                 }
             }
         }
@@ -364,6 +377,112 @@ class TreeViewEx extends Gui.TreeView {
                     this.Add(val, stack[-1], Options ?? unset)
                 }
             }
+        }
+    }
+    AddObjListFromTemplate(List, Struct, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0) {
+        if IsObject(Struct) {
+            Struct := Struct.Clone()
+        } else {
+            Struct := this.Templates.Get(Struct).Clone()
+        }
+        Struct.hParent := InitialParentId
+        stack := ['']
+        if MaxDepth > 0 {
+            for val in List {
+                if IsObject(val) {
+                    Struct.pszText := val.%LabelProp%
+                    if HasProp(val, ChildrenProp) && val.%ChildrenProp% is Array && stack.Length <= MaxDepth {
+                        if id := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                            stack.Push(id)
+                            _ProcessMaxDepth(val.%ChildrenProp%)
+                            stack.Pop()
+                            Struct.hParent := InitialParentId
+                        } else {
+                            _Throw()
+                        }
+                    } else if !SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        _Throw()
+                    }
+                } else {
+                    Struct.pszText := val
+                    if !SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        _Throw()
+                    }
+                }
+            }
+        } else {
+            for val in List {
+                if IsObject(val) {
+                    Struct.pszText := val.%LabelProp%
+                    if HasProp(val, ChildrenProp) && val.%ChildrenProp% is Array {
+                        if id := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                            stack.Push(id)
+                            _Process(val.%ChildrenProp%)
+                            stack.Pop()
+                            Struct.hParent := InitialParentId
+                        } else {
+                            _Throw()
+                        }
+                    } else if !SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        _Throw()
+                    }
+                } else {
+                    Struct.pszText := val
+                    if !SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        _Throw()
+                    }
+                }
+            }
+        }
+
+        _Process(List) {
+            Struct.hParent := stack[-1]
+            for val in List {
+                if IsObject(val) {
+                    Struct.pszText := val.%LabelProp%
+                    if id := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        if HasProp(val, ChildrenProp) && val.%ChildrenProp% is Array {
+                            stack.Push(id)
+                            _Process(val.%ChildrenProp%)
+                            stack.Pop()
+                            Struct.hParent := stack[-1]
+                        }
+                    } else {
+                        _Throw()
+                    }
+                } else {
+                    Struct.pszText := val
+                    if !SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        _Throw()
+                    }
+                }
+            }
+        }
+        _ProcessMaxDepth(List) {
+            Struct.hParent := stack[-1]
+            for val in List {
+                if IsObject(val) {
+                    Struct.pszText := val.%LabelProp%
+                    if id := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        if HasProp(val, ChildrenProp) && val.%ChildrenProp% is Array && stack.Length < MaxDepth {
+                            stack.Push(id)
+                            _ProcessMaxDepth(val.%ChildrenProp%)
+                            stack.Pop()
+                            Struct.hParent := stack[-1]
+                        }
+                    } else {
+                        _Throw()
+                    }
+                } else {
+                    Struct.pszText := val
+                    if !SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
+                        _Throw()
+                    }
+                }
+            }
+        }
+        _Throw() {
+            throw Error('TVM_INSERTITEMW failed.', -1)
         }
     }
     /**

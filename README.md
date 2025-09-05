@@ -16,8 +16,9 @@ The following is a list of methods and properties. The items with an "X" next to
 |  Name                     |  Is tested  |
 |  -------------------------|-----------  |
 |  AddObj                   |      X      |
-|  AddObjList               |             |
-|  AddTemplate              |             |
+|  AddObjList               |      X      |
+|  AddObjListFromTemplate   |      X      |
+|  AddTemplate              |      X      |
 |  Collapse                 |             |
 |  CollapseReset            |             |
 |  CopyItemId               |             |

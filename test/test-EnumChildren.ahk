@@ -1,9 +1,9 @@
 ﻿
 #include ..\src\TreeViewEx.ahk
 
-test()
+test_EnumChildren()
 
-class test {
+class test_EnumChildren {
     static Obj := {
         Name: 'obj1'
       , Children: [
@@ -17,7 +17,7 @@ class test {
     static Call() {
         g := this.g := Gui('+Resize')
         tv := TreeViewEx(g, 'w600 r20 vTv')
-        tv.AddObj(this.Obj, 'Name', 'Children')
+        tv.AddObj(this.Obj)
         tv.SetNodeConstructor(TreeViewNode)
         g.Add('Button', 'section vBtnEnum', 'Enum').OnEvent('Click', HClickButtonEnum)
         g.Add('Button', 'ys vBtnEnumRecursive', 'EnumRecursive').OnEvent('Click', HClickButtonEnumRecursive)

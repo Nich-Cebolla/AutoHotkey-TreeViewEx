@@ -1,4 +1,8 @@
-﻿
+﻿/*
+    Github: https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
+    Author: Nich-Cebolla
+    License: MIT
+*/
 
 class TvItemExW {
     static __New() {
@@ -36,6 +40,8 @@ class TvItemExW {
         proto.offset_hwnd            := 32 + A_PtrSize * 4
         proto.offset_iExpandedImage  := 32 + A_PtrSize * 5
         proto.offset_iReserved       := 36 + A_PtrSize * 5
+
+        proto.DefineProp('Clone', { Call: TreeViewEx_CloneBuffer })
     }
     __New(Members?) {
         this.Buffer := Buffer(this.cbSize)
@@ -50,6 +56,68 @@ class TvItemExW {
                 }
             }
         }
+    }
+    /**
+     * @description - Copies the bytes from this object's buffer to another buffer.
+     *
+     * @param {TvItemExW|Buffer|Object} [Buf] - If set, one of the following kinds of objects:
+     * - A `TvItemExW` object.
+     * - A `Buffer` object.
+     * - An object with properties { Ptr, Size }.
+     *
+     * The size of the buffer must be at least `TvItemExW.Prototype.cbSize + Offset`.
+     *
+     * If unset, a buffer of adequate size will be created.
+     *
+     * @param {Integer} [Offset = 0] - The byte offset at which to copy the data. For example, if
+     * `Offset == 8`, then the data will be copied to `Buf.Ptr + 8`. The first 8 bytes of the
+     * new/target buffer will be unchanged.
+     *
+     * @param {Boolean} [MakeInstance = true] - If true, and if `Buf` is unset or is not already
+     * an instance of `TvItemExW`, then an instance of `TvItemExW` will be created.
+     *
+     * @returns {Buffer|TvItemExW} - Depending on the value of `MakeInstance`, the `Buffer`
+     * object or the `TvItemExW` object.
+     *
+     * @throws {Error} - "The input buffer's size is insufficient."
+     */
+    Clone(Buf?, Offset := 0, MakeInstance := true) {
+        ; This is overridden
+    }
+    GetStateImageIndex() {
+        return (this.state & TVIS_STATEIMAGEMASK) >> 12
+    }
+    SetBold(Value := true) {
+        this.mask := this.mask | TVIF_STATE
+        if Value {
+            this.state := this.state | TVIS_BOLD
+        }
+        this.stateMask := this.stateMask | TVIS_BOLD
+    }
+    SetChecked(Value := true) {
+        this.SetStateImage(Value ? 2 : 1)
+    }
+    SetExpand(Value := true) {
+        this.mask := this.mask | TVIF_STATE
+        if Value {
+            this.state := this.state | TVIS_EXPANDED
+        }
+        this.stateMask := this.stateMask | TVIS_EXPANDED
+    }
+    SetSelected(Value := true) {
+        this.mask := this.mask | TVIF_STATE
+        if Value {
+            this.state := this.state | TVIS_SELECTED
+        }
+        this.stateMask := this.stateMask | TVIS_SELECTED
+    }
+    SetStateImage(Index) {
+        if Index < 0 || Index > 15 {
+            throw ValueError('Invalid index.', -1, Index)
+        }
+        this.mask := this.mask | TVIF_STATE
+        this.stateMask := this.stateMask | TVIS_STATEIMAGEMASK
+        this.state := (this.state & ~TVIS_STATEIMAGEMASK) | (index << 12)
     }
     mask {
         Get => NumGet(this.Buffer, this.offset_mask, 'uint')

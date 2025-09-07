@@ -1,4 +1,8 @@
-﻿
+﻿/*
+    Github: https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
+    Author: Nich-Cebolla
+    License: MIT
+*/
 
 class TvInsertStructW {
     static __New() {
@@ -41,6 +45,12 @@ class TvInsertStructW {
         proto.offset_iExpandedImage  := 32 + A_PtrSize * 7
         proto.offset_iReserved       := 36 + A_PtrSize * 7
 
+        protoItemExW := TvItemExW.Prototype
+        for prop in protoItemExW.OwnProps() {
+            if HasMethod(protoItemExW, prop) && !HasMethod(proto, prop) {
+                proto.DefineProp(prop, protoItemExW.GetOwnPropDesc(prop))
+            }
+        }
         proto.DefineProp('Clone', { Call: TreeViewEx_CloneBuffer })
     }
     __New(Members?) {
@@ -57,8 +67,47 @@ class TvInsertStructW {
             }
         }
     }
+    /**
+     * @description - Copies the bytes from this object's buffer to another buffer.
+     *
+     * @param {TvInsertStructW|Buffer|Object} [Buf] - If set, one of the following kinds of objects:
+     * - A `TvInsertStructW` object.
+     * - A `Buffer` object.
+     * - An object with properties { Ptr, Size }.
+     *
+     * The size of the buffer must be at least `TvInsertStructW.Prototype.cbSize + Offset`.
+     *
+     * If unset, a buffer of adequate size will be created.
+     *
+     * @param {Integer} [Offset = 0] - The byte offset at which to copy the data. For example, if
+     * `Offset == 8`, then the data will be copied to `Buf.Ptr + 8`. The first 8 bytes of the
+     * new/target buffer will be unchanged.
+     *
+     * @param {Boolean} [MakeInstance = true] - If true, and if `Buf` is unset or is not already
+     * an instance of `TvInsertStructW`, then an instance of `TvInsertStructW` will be created.
+     *
+     * @returns {Buffer|TvInsertStructW} - Depending on the value of `MakeInstance`, the `Buffer`
+     * object or the `TvInsertStructW` object.
+     *
+     * @throws {Error} - "The input buffer's size is insufficient."
+     */
     Clone(Buf?, Offset := 0, MakeInstance := true) {
         ; This is overridden
+    }
+    /**
+     * @param {Integer} [InsertStyle = 1] - One of the following:
+     * - 1: TVI_ROOT  - The item will be added as a root node.
+     * - 2: TVI_FIRST  - The item will be added as the first child beneath the parent node.
+     * - 3: TVI_LAST  - The item will be added as the last child beneath the parent node.
+     * - 4: TVI_SORT  - The item will be added in alphanumeric order.
+     */
+    SetInsertAfter(InsertStyle := 1) {
+        switch InsertStyle, 0 {
+            case 1: this.hInsertAfter := TVI_ROOT
+            case 2: this.hInsertAfter := TVI_FIRST
+            case 3: this.hInsertAfter := TVI_LAST
+            case 4: this.hInsertAfter := TVI_SORT
+        }
     }
     hParent {
         Get => NumGet(this.Buffer, this.offset_hParent, 'ptr')

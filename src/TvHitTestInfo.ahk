@@ -1,4 +1,9 @@
-﻿
+﻿/*
+    Github: https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
+    Author: Nich-Cebolla
+    License: MIT
+*/
+
 class TvHitTestInfo {
     static __New() {
         this.DeleteProp('__New')
@@ -22,6 +27,30 @@ class TvHitTestInfo {
         this.Y := Y
         this.flags := this.hItem := 0
     }
+    /**
+     * @description - Copies the bytes from this object's buffer to another buffer.
+     *
+     * @param {TvHitTestInfo|Buffer|Object} [Buf] - If set, one of the following kinds of objects:
+     * - A `TvHitTestInfo` object.
+     * - A `Buffer` object.
+     * - An object with properties { Ptr, Size }.
+     *
+     * The size of the buffer must be at least `TvHitTestInfo.Prototype.cbSize + Offset`.
+     *
+     * If unset, a buffer of adequate size will be created.
+     *
+     * @param {Integer} [Offset = 0] - The byte offset at which to copy the data. For example, if
+     * `Offset == 8`, then the data will be copied to `Buf.Ptr + 8`. The first 8 bytes of the
+     * new/target buffer will be unchanged.
+     *
+     * @param {Boolean} [MakeInstance = true] - If true, and if `Buf` is unset or is not already
+     * an instance of `TvHitTestInfo`, then an instance of `TvHitTestInfo` will be created.
+     *
+     * @returns {Buffer|TvHitTestInfo} - Depending on the value of `MakeInstance`, the `Buffer`
+     * object or the `TvHitTestInfo` object.
+     *
+     * @throws {Error} - "The input buffer's size is insufficient."
+     */
     Clone(Buf?, Offset := 0, MakeInstance := true) {
         ; This is overridden
     }

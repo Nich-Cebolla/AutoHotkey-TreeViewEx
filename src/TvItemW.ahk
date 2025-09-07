@@ -1,4 +1,9 @@
-﻿
+﻿/*
+    Github: https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
+    Author: Nich-Cebolla
+    License: MIT
+*/
+
 class TvItemW {
     static __New() {
         this.DeleteProp('__New')
@@ -36,6 +41,33 @@ class TvItemW {
                 }
             }
         }
+    }
+    /**
+     * @description - Copies the bytes from this object's buffer to another buffer.
+     *
+     * @param {TvItemW|Buffer|Object} [Buf] - If set, one of the following kinds of objects:
+     * - A `TvItemW` object.
+     * - A `Buffer` object.
+     * - An object with properties { Ptr, Size }.
+     *
+     * The size of the buffer must be at least `TvItemW.Prototype.cbSize + Offset`.
+     *
+     * If unset, a buffer of adequate size will be created.
+     *
+     * @param {Integer} [Offset = 0] - The byte offset at which to copy the data. For example, if
+     * `Offset == 8`, then the data will be copied to `Buf.Ptr + 8`. The first 8 bytes of the
+     * new/target buffer will be unchanged.
+     *
+     * @param {Boolean} [MakeInstance = true] - If true, and if `Buf` is unset or is not already
+     * an instance of `TvItemW`, then an instance of `TvItemW` will be created.
+     *
+     * @returns {Buffer|TvItemW} - Depending on the value of `MakeInstance`, the `Buffer`
+     * object or the `TvItemW` object.
+     *
+     * @throws {Error} - "The input buffer's size is insufficient."
+     */
+    Clone(Buf?, Offset := 0, MakeInstance := true) {
+        ; This is overridden
     }
     mask {
         Get => NumGet(this.Buffer, this.offset_mask, 'uint')

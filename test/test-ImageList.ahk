@@ -35,13 +35,13 @@ class test_ImageList {
 
         g := this.g := Gui('+Resize')
 
-        tv1 := this.tv1 := TreeViewEx(g, 'w600 r20 vTv1')
+        tv1 := this.tv1 := TreeViewEx(g.Hwnd, { Width: 600, Rows: 20 })
         tv1.SetImageList(TVSIL_NORMAL, imgList.Handle)
         if tv1.GetImageList(TVSIL_NORMAL) != imgList.Handle {
             throw Error('Mismatched image list handles.', -1)
         }
         listObj := this.listObj := [this.Obj.Clone(), this.Obj.Clone(), this.Obj.Clone()]
-        struct1 := this.struct1 := TvInsertStructW()
+        struct1 := this.struct1 := TvInsertStruct()
         struct1.hInsertAfter := TVI_SORT
         struct1.mask := TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE
         struct1.iImage := 0
@@ -49,12 +49,13 @@ class test_ImageList {
         tv1.AddTemplate('test1', struct1)
         tv1.AddObjListFromTemplate(listObj, 'test1')
 
-        tv2 := this.tv2 := TreeViewEx(g, 'w600 r20 Checked vTv2')
+        tv1.GetPos(, &y, , &h)
+        tv2 := this.tv2 := TreeViewEx(g.Hwnd, { Width: 600, Rows: 20, Y: y + h + 10, X: 10 })
         tv2.SetImageList(TVSIL_STATE, imgList.Handle)
         if tv2.GetImageList(TVSIL_STATE) != imgList.Handle {
             throw Error('Mismatched image list handles.', -1)
         }
-        struct2 := this.struct2 := TvInsertStructW()
+        struct2 := this.struct2 := TvInsertStruct()
         struct2.hInsertAfter := TVI_SORT
         struct2.SetStateImage(1)
         tv2.AddTemplate('test2', struct2)
@@ -69,7 +70,7 @@ class test_ImageList {
         return
 
         HClickButtonState(Ctrl, *) {
-            struct := TvItemExW()
+            struct := TvItemEx()
             struct.mask := struct.mask | TVIF_HANDLE
             struct.SetStateImage(Ctrl.Gui['EdtIndex'].Text)
             for parent, id in this.tv2.EnumChildrenRecursive() {

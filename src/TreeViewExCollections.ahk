@@ -4,6 +4,10 @@
     License: MIT
 */
 
+class TreeViewExNodeCollection extends Map {
+}
+
+
 class TreeViewExTemplatesCollection extends Map {
     __New(CaseSense := false) {
         this.CaseSense := CaseSense

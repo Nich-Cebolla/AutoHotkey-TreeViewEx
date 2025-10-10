@@ -46,6 +46,8 @@ An AutoHotkey (AHK) library that extends the built-in tree-view control function
 
 - [`Rect`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk)
 - [`LibraryManager`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk)
+- [`Container`](https://github.com/Nich-Cebolla/AutoHotkey-Container)
+- [`MenuEx`](https://github.com/Nich-Cebolla/AutoHotkey-MenuEx)
 
 # Demo
 

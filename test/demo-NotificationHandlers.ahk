@@ -1,11 +1,19 @@
 ﻿
 #SingleInstance force
 
-#include ..\src\TreeViewEx.ahk
+#include <tracer-config>
+global t_opt := TracerOptions(tcl('debug'))
+, t_grp := TracerGroup(t_opt, 2)
+, t := t_grp()
+#include <TestInterfaceMini>
+#include ..\src\VENV.ahk
+
 
 f2::Demo.SendEditLabel()
 f3::Demo.SendEndEditLabel(true)
 f4::Demo.SendEndEditLabel(false)
+
+!esc::ExitApp()
 
 Demo()
 
@@ -30,114 +38,103 @@ class Demo {
         g := this.g := Gui('+Resize')
 
         ; Add TreeViewEx
-        tv := this.tv := TreeViewEx(
-            g.Hwnd
+        tvex := this.tvex := TreeViewEx(
+            g
           , {
                 Width: 550
               , Rows: 20
-              , Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | TVS_EDITLABELS
+              , Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | TVS_EDITLABELS | WS_BORDER
               , ExStyle: TVS_EX_DOUBLEBUFFER | WS_EX_COMPOSITED
             }
         )
 
         ; Set the node constructor
-        tv.SetNodeConstructor(DemoTreeViewExNode)
+        tvex.SetNodeConstructor(DemoTreeViewEx_Node)
 
         ; Set handlers
-        tv.OnNotify(TVN_BEGINLABELEDITW, TreeViewEx_HandlerBeginLabelEdit_Node_Ptr)
-        tv.OnNotify(TVN_DELETEITEMW, TreeViewEx_HandlerDeleteItem_Node_Ptr)
-        tv.OnNotify(TVN_GETDISPINFOW, TreeViewEx_HandlerGetDispInfo_Node_Ptr)
-        tv.OnNotify(TVN_ENDLABELEDITW, TreeViewEx_HandlerEndLabelEdit_Node_Ptr)
-        ; tv.OnNotify(TVN_GETINFOTIPW, TreeViewEx_HandlerGetInfoTip_Node_Ptr)
-        tv.OnNotify(TVN_ITEMCHANGEDW, TreeViewEx_HandlerItemChanged_Node_Ptr)
-        tv.OnNotify(TVN_ITEMCHANGINGW, TreeViewEx_HandlerItemChanging_Node_Ptr)
-        tv.OnNotify(TVN_ITEMEXPANDEDW, TreeViewEx_HandlerItemExpanded_Node_Ptr)
-        tv.OnNotify(TVN_ITEMEXPANDINGW, TreeViewEx_HandlerItemExpanding_Node_Ptr)
-        tv.OnNotify(TVN_SETDISPINFOW, TreeViewEx_HandlerSetDispInfo_Node_Ptr)
+        tvex.OnNotify(TVN_BEGINLABELEDITW, TreeViewEx_HandlerBeginLabelEdit_Node_Ptr)
+        tvex.OnNotify(TVN_DELETEITEMW, TreeViewEx_HandlerDeleteItem_Node_Ptr)
+        tvex.OnNotify(TVN_GETDISPINFOW, TreeViewEx_HandlerGetDispInfo_Node_Ptr)
+        tvex.OnNotify(TVN_ENDLABELEDITW, TreeViewEx_HandlerEndLabelEdit_Node_Ptr)
+        ; tvex.OnNotify(TVN_GETINFOTIPW, TreeViewEx_HandlerGetInfoTip_Node_Ptr)
+        tvex.OnNotify(TVN_ITEMCHANGEDW, TreeViewEx_HandlerItemChanged_Node_Ptr)
+        tvex.OnNotify(TVN_ITEMCHANGINGW, TreeViewEx_HandlerItemChanging_Node_Ptr)
+        tvex.OnNotify(TVN_ITEMEXPANDEDW, TreeViewEx_HandlerItemExpanded_Node_Ptr)
+        tvex.OnNotify(TVN_ITEMEXPANDINGW, TreeViewEx_HandlerItemExpanding_Node_Ptr)
+        tvex.OnNotify(TVN_SETDISPINFOW, TreeViewEx_HandlerSetDispInfo_Node_Ptr)
 
         ; This block handles getting the paths to the various example icon files used for testing
-        ; This example currently only uses one size of file, but I've included the other sizes here
-        ; because I intend to extend this example to include swapping out the files when the DPI changes
-        paths := this.paths := Map('20', [], '25', [], '30', [], '35', [], '40', [])
-        loop Files 'icons\*.ico' {
-            if RegExMatch(A_LoopFileName, '^\d+', &match) {
-                paths.Get(match[0]).Push(A_LoopFileFullPath)
-            }
-        }
+        ; The image file list code needs more work, not working correctly at the moment
+        ; paths := this.paths := Map('20', [], '25', [], '30', [], '35', [], '40', [])
+        ; loop Files 'icons\*.ico' {
+        ;     if RegExMatch(A_LoopFileName, '^\d+', &match) {
+        ;         paths.Get(match[0]).Push(A_LoopFileFullPath)
+        ;     }
+        ; }
 
         ; Set image list
-        listPath := this.paths.Get('20')
-        imgList := this.ImageList := ImageList(listPath)
-        ; tv.SetImageList(TVSIL_NORMAL, imgList.Handle)
-        ; tv.SetImageList(TVSIL_STATE, imgList.Handle)
+        ; listPath := this.paths.Get('20')
+        ; imgList := this.ImageList := ImageList(listPath)
+        ; tvex.SetImageList(TVSIL_NORMAL, imgList.Handle)
+        ; tvex.SetImageList(TVSIL_STATE, imgList.Handle)
         ; Add root items
-        struct := DemoTreeViewExNode.Prototype.InsertStruct
+
+        ; Add the root nodes. Our TVN_GETDISPINFO handler tells the system that the nodes have children
+        ; so the tree-view control displays the + symbol next to the node even though the child nodes
+        ; don't actually exist yet. Our TVN_ITEMEXPANDING handler adds the nodes when the
+        ; user clicks the +. This is to conserve some resources and also to have more control over
+        ; the tree-view's behavior.
+        struct := DemoTreeViewEx_Node.Prototype.InsertStruct
         for obj in this.List {
-            tv.AddNode(struct, obj)
+            tvex.AddNode(struct, obj)
         }
 
         g.Show('x20 w600 y20 h600')
-        ; add other controls
-        tv.GetPos(&x, &y, &w, &h)
-        g.Add('Button', 'section x' x ' y' (y + h + 10) ' vBtnExit', 'Exit').OnEvent('Click', (*) => ExitApp())
+
+        tvex.GetPos(&x, &y, &w, &h)
+
+        g.Add('Button', 'section x' x ' y' (y + h + 10) ' vBtnExit', 'Exit').OnEvent('Click', _Exit)
+        g.OnEvent('Close', (self, *) => self.Destroy())
+        tvex.SetContextMenu(, { ShowTooltips: true })
         ; Show Gui
         WinRedraw(g.Hwnd)
+        ; this.ti := TestInterfaceMini(Map('treeview', tvex, 'contextmenu', tvex.ContextMenu, 'demo', demo))
 
         return
 
         HClickButtonGetText(Ctrl, *) {
             g := Ctrl.Gui
-            tv := g['Tv']
+            tvex := g['tvex']
             struct := TvItem()
             struct.mask := TVIF_HANDLE | TVIF_TEXT
-            for handle, parent in tv.EnumChildrenRecursive() {
+            for handle, parent in tvex.EnumChildrenRecursive() {
                 struct.hItem := handle
-                SendMessage(TVM_GETITEMW, 0, struct.Ptr, tv.Hwnd)
+                SendMessage(TVM_GETITEMW, 0, struct.Ptr, tvex.Hwnd)
                 OutputDebug('Tick: ' A_TickCount ', Func: ' 'Button GetText: ' struct.pszText '`n')
             }
         }
         HClickButtonDisposeTreeView(Ctrl, *) {
-            Demo.tv.Dispose()
+            Demo.tvex.Dispose()
         }
-        HClickButtonDisposeWindowSubclass(*) {
-            TreeViewExWindowSubclassManager.Collection.Get(Demo.g.Hwnd).Dispose()
+        _Exit(*) {
+            t.Log('Exiting.')
+            ExitApp()
         }
     }
     static SendEditLabel() {
-        this.tv.EditSelectedLabel()
+        this.tvex.EditSelectedLabel()
     }
     static SendEndEditLabel(value) {
-        this.tv.EndEditLabel(value)
+        this.tvex.EndEditLabel(value)
     }
-    static SendSetDispInfo() {
-        struct := TvDispInfoEx()
-        struct.mask := TVIF_TEXT
-        struct.code := TVN_SETDISPINFOW
-        struct.idFrom := 0
-        struct.hwndFrom := this.tv.Hwnd
-        struct.cchTextMax := 260
-        for k, node in Demo.Tv.Collection {
-            if not node.Value is ValueWithoutNameProp {
-                _node := node
-                break
-            }
-        }
-        struct.lParam := ObjPtr(_node)
-        struct.pszText := 'TEST'
-        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : pszText == ' struct.pszText '`n')
-        _windowSubclass := TreeViewExWindowSubclassManager.Collection.Get(this.g.Hwnd).WindowSubclass
-        TreeViewEx_SubclassProc(
-            this.g.Hwnd
-          , WM_NOTIFY
-          , 0
-          , struct.Buffer.Ptr
-          , _windowSubclass.uIdSubclass
-          , _windowSubclass.dwRefData
-        )
+    static SendHitTest() {
+        hitTestInfo := this.tvex.HitTest()
+        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc '`n')
+        sleep 1
     }
 }
 
-class DemoTreeViewExNode extends TreeViewExNode {
+class DemoTreeViewEx_Node extends TreeViewEx_Node {
     static __New() {
         this.DeleteProp('__New')
         proto := this.Prototype
@@ -149,7 +146,7 @@ class DemoTreeViewExNode extends TreeViewExNode {
           , 'TVIS_SELECTED', TVIS_SELECTED, 'TVIS_OVERLAYMASK', TVIS_OVERLAYMASK
           , 'TVIS_STATEIMAGEMASK', TVIS_STATEIMAGEMASK, 'TVIS_USERMASK', TVIS_USERMASK
         )
-        proto.__TooltipNumber := ''
+        proto.__TooltipNumber := proto.Handle := ''
         struct := proto.InsertStruct := TvInsertStruct()
         ; struct.iImage := struct.iSelectedImage := I_IMAGECALLBACK
         struct.pszText := LPSTR_TEXTCALLBACKW
@@ -170,12 +167,13 @@ class DemoTreeViewExNode extends TreeViewExNode {
             this.ImageGroup := 2
             this.SelectedImageGroup := 2
         }
+        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc '; Node: ' this.Handle '`n')
     }
     OnBeginLabelEdit(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         ; This will just display a tooltip by the item.
         rc := this.GetRect()
-        rc.ToScreen(this.HwndTv, true)
+        rc.ToScreen(this.HwndCtrl, true)
         this.__TooltipNumber := this.ShowTooltip('Editing item for ' this.OnGetInfoName(Struct), { End: 0, X: rc.R + 3, Y: rc.T })
     }
     OnDeleteItem(Struct) {
@@ -186,7 +184,7 @@ class DemoTreeViewExNode extends TreeViewExNode {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         ; Get coordinates to display tooltip
         rc := this.GetRect()
-        rc.ToScreen(this.HwndTv, true)
+        rc.ToScreen(this.HwndCtrl, true)
         if this.__TooltipNumber {
             ToolTip(, , , this.__TooltipNumber)
             this.__TooltipNumber := ''
@@ -205,7 +203,7 @@ class DemoTreeViewExNode extends TreeViewExNode {
             this.Value := Struct.pszText
         }
         this.ShowTooltip('Updated the item to: ' Struct.pszText, { X: rc.R + 3, Y: rc.T })
-        WinRedraw(this.HwndTv)
+        WinRedraw(this.HwndCtrl)
         return 1
     }
     OnGetInfoChildren(Struct) {
@@ -224,7 +222,7 @@ class DemoTreeViewExNode extends TreeViewExNode {
         }
     }
     OnGetInfoName(Struct) {
-        ; OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
+        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         if IsObject(this.Value) {
             if HasProp(this.Value, 'Name') {
                 if IsNumber(this.Value.Name) {
@@ -260,7 +258,7 @@ class DemoTreeViewExNode extends TreeViewExNode {
         old := Struct.uStateOld
         for name, flag in this.StateFlags {
             if (new & flag) != (old & flag) {
-                OutputDebug('Tick: ' A_TickCount ', Func: ' name ' changed.`n')
+                OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc '; Flag name: ' name ' changed.`n')
             }
         }
         return 0
@@ -280,7 +278,7 @@ class DemoTreeViewExNode extends TreeViewExNode {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         ; Get coordinates to display tooltip
         rc := this.GetRect()
-        rc.ToScreen(this.HwndTv, true)
+        rc.ToScreen(this.HwndCtrl, true)
         switch Struct.action {
             case TVE_COLLAPSE, TVE_COLLAPSERESET:
                 this.ShowTooltip('Collapsed item ' this.OnGetInfoName(Struct), { X: rc.R + 3, Y: rc.T })
@@ -298,9 +296,11 @@ class DemoTreeViewExNode extends TreeViewExNode {
             } else {
                 Value := TVE_EXPAND
             }
+        } else {
+            Value := Struct.action
         }
         ctrl := this.Ctrl
-        switch Struct.action {
+        switch Value {
             case TVE_COLLAPSE, TVE_COLLAPSERESET:
                 ; We'll delete all children to keep memory low
                 ; If a child node is currently selected, we have to un-select it

@@ -31,11 +31,9 @@ class TreeViewExStructBase {
                             this.%prop% := Members.%prop%
                         }
                     }
-                }
-                b := b.Base
-                if b.__Class = 'Any' {
                     break
                 }
+                b := b.Base
             }
         }
     }

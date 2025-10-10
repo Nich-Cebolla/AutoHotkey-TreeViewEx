@@ -52,6 +52,11 @@ class TvItem extends TreeViewExStructBase {
         }
         this.stateMask := this.stateMask | TVIS_EXPANDED
     }
+    SetTextBuffer(Bytes := TVEX_DEFAULT_TEXT_MAX) {
+        this.__pszText := Buffer(Bytes)
+        this.cchTextMax := Floor(Bytes / 2)
+        NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
+    }
     SetSelected(Value := true) {
         this.mask := this.mask | TVIF_STATE
         if Value {

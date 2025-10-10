@@ -4,7 +4,7 @@
     License: MIT
 */
 
-class TreeViewExNode {
+class TreeViewEx_Node {
     static SetHandlerBeginLabelEdit(Callback) {
         this.__SetHandler(Callback, 'OnBeginLabelEdit')
     }
@@ -75,31 +75,31 @@ class TreeViewExNode {
     CopyItemId() {
         A_Clipboard := this.Handle
     }
-    Collapse() => SendMessage(TVM_EXPAND, TVE_COLLAPSE, this.Handle, this.HwndTv)
-    CollapseReset() => SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, this.Handle, this.HwndTv)
-    CreateDragImage() => SendMessage(TVM_CREATEDRAGIMAGE, 0, this.Handle, this.HwndTv)
-    Delete() => SendMessage(TVM_DELETEITEM, 0, this.Handle, this.HwndTv)
-    EnsureVisible() => SendMessage(TVM_ENSUREVISIBLE, 0, this.Handle, this.HwndTv)
+    Collapse() => SendMessage(TVM_EXPAND, TVE_COLLAPSE, this.Handle, this.HwndCtrl)
+    CollapseReset() => SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, this.Handle, this.HwndCtrl)
+    CreateDragImage() => SendMessage(TVM_CREATEDRAGIMAGE, 0, this.Handle, this.HwndCtrl)
+    Delete() => SendMessage(TVM_DELETEITEM, 0, this.Handle, this.HwndCtrl)
+    EnsureVisible() => SendMessage(TVM_ENSUREVISIBLE, 0, this.Handle, this.HwndCtrl)
     EnumChildren(VarCount?) => this.Ctrl.EnumChildren(this.Handle, VarCount ?? unset)
     EnumChildrenRecursive(VarCount?) => this.Ctrl.EnumChildrenRecursive(this.Handle, VarCount ?? unset)
-    Expand() => SendMessage(TVM_EXPAND, TVE_EXPAND, this.Handle, this.HwndTv)
-    ExpandPartial() => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, this.Handle, this.HwndTv)
-    GetItemState(Mask) => SendMessage(TVM_GETITEMSTATE, this.Handle, Mask, this.HwndTv)
+    Expand() => SendMessage(TVM_EXPAND, TVE_EXPAND, this.Handle, this.HwndCtrl)
+    ExpandPartial() => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, this.Handle, this.HwndCtrl)
+    GetItemState(Mask) => SendMessage(TVM_GETITEMSTATE, this.Handle, Mask, this.HwndCtrl)
     GetRect() => this.Ctrl.GetItemRect(this.Handle)
     GetText() => this.Ctrl.GetText(this.Handle)
-    MapHTreeItemToAccId() => SendMessage(TVM_MAPHTREEITEMTOACCID, this.Handle, 0, this.HwndTv)
-    Select() => SendMessage(TVM_SELECTITEM, TVGN_CARET, this.Handle, this.HwndTv)
+    MapHTreeItemToAccId() => SendMessage(TVM_MAPHTREEITEMTOACCID, this.Handle, 0, this.HwndCtrl)
+    Select() => SendMessage(TVM_SELECTITEM, TVGN_CARET, this.Handle, this.HwndCtrl)
     SetHandle(Handle) => this.Handle := Handle
-    SetInsertMark(AfterItem := false) => SendMessage(TVM_SETINSERTMARK, AfterItem, this.Handle, this.HwndTv)
+    SetInsertMark(AfterItem := false) => SendMessage(TVM_SETINSERTMARK, AfterItem, this.Handle, this.HwndCtrl)
     SetTreeView(Hwnd) {
-        this.HwndTv := Hwnd
+        this.HwndCtrl := Hwnd
     }
-    ShowInfoTip() => SendMessage(TVM_SHOWINFOTIP, 0, this.Handle, this.HwndTv)
-    SortChildren(Recursive := true) => SendMessage(TVM_SORTCHILDREN, Recursive, this.Handle, this.HwndTv)
+    ShowInfoTip() => SendMessage(TVM_SHOWINFOTIP, 0, this.Handle, this.HwndCtrl)
+    SortChildren(Recursive := true) => SendMessage(TVM_SORTCHILDREN, Recursive, this.Handle, this.HwndCtrl)
     SortChildrenCb(Callback, lParam?) => this.Ctrl.SortChildrenCb(this.Handle, Callback, lParam ?? 0)
-    Toggle() => SendMessage(TVM_EXPAND, TVE_TOGGLE, this.Handle, this.HwndTv)
+    Toggle() => SendMessage(TVM_EXPAND, TVE_TOGGLE, this.Handle, this.HwndCtrl)
 
-    ; These are intended to be overridden by classes which inherit from `TreeViewExNode` or by calling
+    ; These are intended to be overridden by classes which inherit from `TreeViewEx_Node` or by calling
     ; one of the static "Set<Name>Handler" methods. See README.md for more info.
     OnBeginLabelEdit(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
@@ -150,16 +150,16 @@ class TreeViewExNode {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
 
-    Child => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, this.Handle, this.HwndTv)
-    Gui => GuiFromHwnd(this.HwndTv).Gui
+    Child => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, this.Handle, this.HwndCtrl)
+    Gui => GuiFromHwnd(this.HwndCtrl).Gui
     IsExpanded => this.Ctrl.IsExpanded(this.Handle)
-    HasChildren => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, this.Handle, this.HwndTv) ? 1 : 0
-    IsRoot => !SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, this.Handle, this.HwndTv)
+    HasChildren => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, this.Handle, this.HwndCtrl) ? 1 : 0
+    IsRoot => !SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, this.Handle, this.HwndCtrl)
     LineRect => this.Ctrl.GetLineRect(this.Handle)
-    Next => SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, this.Handle, this.HwndTv)
-    Parent => SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, this.Handle, this.HwndTv)
-    Previous => SendMessage(TVM_GETNEXTITEM, TVGN_PREVIOUS, this.Handle, this.HwndTv)
-    Root => SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, this.Handle, this.HwndTv)
+    Next => SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, this.Handle, this.HwndCtrl)
+    Parent => SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, this.Handle, this.HwndCtrl)
+    Previous => SendMessage(TVM_GETNEXTITEM, TVGN_PREVIOUS, this.Handle, this.HwndCtrl)
+    Root => SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, this.Handle, this.HwndCtrl)
     Rect => this.Ctrl.GetItemRect(this.Handle)
 }
 

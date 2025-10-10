@@ -19,14 +19,14 @@ An AutoHotkey (AHK) library that extends the built-in tree-view control function
     </ol>
     <li><a href="#treeviewex-tested-notification-handlers">TreeViewEx: Tested notification handlers</a></li>
   </ol>
-  <li><a href="#TreeViewExNode">TreeViewExNode</a></li>
+  <li><a href="#TreeViewEx_Node">TreeViewEx_Node</a></li>
   <ol type="A">
-    <li><a href="#extending-TreeViewExNode">Extending TreeViewExNode</a></li>
-    <li><a href="#TreeViewExNode-tested-methods-and-properties">TreeViewExNode: Tested methods and properties</a></li>
+    <li><a href="#extending-TreeViewEx_Node">Extending TreeViewEx_Node</a></li>
+    <li><a href="#TreeViewEx_Node-tested-methods-and-properties">TreeViewEx_Node: Tested methods and properties</a></li>
     <ol type="A">
-      <li><a href="#TreeViewExNode-static-methods">TreeViewExNode: Static methods</a></li>
-      <li><a href="#TreeViewExNode-instance-methods">TreeViewExNode: Instance methods</a></li>
-      <li><a href="#TreeViewExNode-instance-properties">TreeViewExNode: Instance properties</a></li>
+      <li><a href="#TreeViewEx_Node-static-methods">TreeViewEx_Node: Static methods</a></li>
+      <li><a href="#TreeViewEx_Node-instance-methods">TreeViewEx_Node: Instance methods</a></li>
+      <li><a href="#TreeViewEx_Node-instance-properties">TreeViewEx_Node: Instance properties</a></li>
     </ol>
   </ol>
 </ol>
@@ -45,7 +45,6 @@ An AutoHotkey (AHK) library that extends the built-in tree-view control function
 `TreeViewEx` requires the following dependencies:
 
 - [`Rect`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk)
-- [`WindowSubclass`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/Win32/WindowSubclass.ahk)
 - [`LibraryManager`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk)
 
 # Demo
@@ -100,6 +99,7 @@ None.
 |  EnumChildrenRecursive   |      X      |
 |  Expand                  |      X      |
 |  ExpandPartial           |             |
+|  ExpandRecursive         |      X      |
 |  GetBkColor              |             |
 |  GetEditControl          |             |
 |  GetExtendedStyle        |             |
@@ -114,6 +114,8 @@ None.
 |  GetItemState            |             |
 |  GetLineColor            |             |
 |  GetLineRect             |             |
+|  GetNext                 |      X      |
+|  GetChild                |      X      |
 |  GetNode                 |      X      |
 |  GetNode_C               |      X      |
 |  GetNode_Ptr             |             |
@@ -139,6 +141,7 @@ None.
 |  SetAutoScrollInfo       |             |
 |  SetBkColor              |             |
 |  SetBorder               |             |
+|  SetContextMenu          |      X      |
 |  SetExtendedStyle        |             |
 |  SetImageList            |      X      |
 |  SetIndent               |             |
@@ -259,13 +262,13 @@ These are the functions in file "src\notify-node-ptr.ahk". They get the node obj
 |  TreeViewEx_HandlerSetDispInfo_Node_Ptr     |      X      |
 |  TreeViewEx_HandlerSingleExpand_Node_Ptr    |             |
 
-# TreeViewExNode
+# TreeViewEx_Node
 
-Each instance of `TreeViewExNode` has a property "Handle" which is set with the HTREEITEM handle. This is the same value as the `ItemID` parameter used by various `TreeView` methods as described in the [AutoHotkey documentation](https://www.autohotkey.com/docs/v2/lib/TreeView.htm). For example, the first parameter of [TreeView.Prototype.Modify](https://www.autohotkey.com/docs/v2/lib/TreeView.htm#Modify), expects an HTREEITEM handle. When you call a method or access a property from a `TreeViewExNode` instance, in most cases it calls a function which sends a TVM message where the `wParam` or `lParam` is expected to be an HTREEITEM handle.
+Each instance of `TreeViewEx_Node` has a property "Handle" which is set with the HTREEITEM handle. This is the same value as the `ItemID` parameter used by various `TreeView` methods as described in the [AutoHotkey documentation](https://www.autohotkey.com/docs/v2/lib/TreeView.htm). For example, the first parameter of [TreeView.Prototype.Modify](https://www.autohotkey.com/docs/v2/lib/TreeView.htm#Modify), expects an HTREEITEM handle. When you call a method or access a property from a `TreeViewEx_Node` instance, in most cases it calls a function which sends a TVM message where the `wParam` or `lParam` is expected to be an HTREEITEM handle.
 
-## Extending TreeViewExNode
+## Extending TreeViewEx_Node
 
-`TreeViewExNode` is intended to be extended and coupled with callback functions passed to one or more of `TreeViewEx.Prototype.SetChildrenHandler`, `TreeViewEx.Prototype.SetImageHandler`, `TreeViewEx.Prototype.SetNameHandler`, `TreeViewEx.Prototype.SetSelectedImageHandler`. This allows our code to reduce memory overhead and increase customizability by controlling these characteristics of the tree-view items dynamically.
+`TreeViewEx_Node` is intended to be extended and coupled with callback functions passed to one or more of `TreeViewEx.Prototype.SetChildrenHandler`, `TreeViewEx.Prototype.SetImageHandler`, `TreeViewEx.Prototype.SetNameHandler`, `TreeViewEx.Prototype.SetSelectedImageHandler`. This allows our code to reduce memory overhead and increase customizability by controlling these characteristics of the tree-view items dynamically.
 
 This section needs more work and there may be some delay before I get back to writing it. Use the [demo file](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/test/demo-NotificationHandlers.ahk) as a guide, and if something is unclear or you have a question, message [@Cebolla](https://www.autohotkey.com/boards/memberlist.php?mode=viewprofile&u=170932) on [AutoHotkey.com](https://www.autohotkey.com/boards/).
 
@@ -293,11 +296,11 @@ The following are the contexts in which the tree-view control sends [TVN_SETDISP
 - If the `pszText` member of the item's The user edits the label of an item (if this functionality is enabled for the control). The `mask` member will have the `TVIF_FLAG` set.
 - An item's selected state has changed. If the item's selected state has changed from being selected to being not selected, the `mask` member will have the `TVIF_IMAGE` flag set. If the item's selected state has changed from being not selected to being selected, the `mask` member will have the `TVIF_SELECTEDIMAGE` flag set.
 
-## TreeViewExNode: Tested methods and properties
+## TreeViewEx_Node: Tested methods and properties
 
 The following is a list of methods and properties. The items with an "X" next to them have been tested. The items with no "X" have not been tested. Most of the methods and properties probably work, but only the marked items have been verified.
 
-### TreeViewExNode: Static methods
+### TreeViewEx_Node: Static methods
 
 |  Name                     |  Is Tested  |
 |  -------------------------|-----------  |
@@ -306,7 +309,7 @@ The following is a list of methods and properties. The items with an "X" next to
 |  SetImageHandler          |             |
 |  SetSelectedImageHandler  |             |
 
-### TreeViewExNode: Instance methods
+### TreeViewEx_Node: Instance methods
 
 |  Name                     |  Is Tested  |
 |  -------------------------|-----------  |
@@ -333,7 +336,7 @@ The following is a list of methods and properties. The items with an "X" next to
 |  SortChildrenCb           |             |
 |  Toggle                   |             |
 
-### TreeViewExNode: Instance properties
+### TreeViewEx_Node: Instance properties
 
 |  Name                     |  Is Tested  |
 |  -------------------------|-----------  |

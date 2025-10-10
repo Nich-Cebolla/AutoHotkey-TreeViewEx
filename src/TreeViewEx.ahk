@@ -4,68 +4,54 @@
     License: MIT
 */
 
-; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk
-#include <Rect>
-; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/Win32/WindowSubclass.ahk
-#include <WindowSubclass>
-; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk
-#include <LibraryManager>
-
-#include lib.ahk
-#include NmTreeView.ahk
-#include notify-node-c.ahk
-#include notify-node-ptr.ahk
-#include notify-node.ahk
-#include TreeViewExCollections.ahk
-#include TreeViewExLogFont.ahk
-#include TreeViewExNode.ahk
-#include TreeViewExStructBase.ahk
-#include TreeViewExWindowSubclassManager.ahk
-#include TvAsyncDraw.ahk
-#include TvDispInfoEx.ahk
-#include TvGetInfoTip.ahk
-#include TvHitTestInfo.ahk
-#include TvImageListDrawParams.ahk
-#include TvInsertStruct.ahk
-#include TvItem.ahk
-#include TvItemChange.ahk
-#include TvItemEx.ahk
-#include TvKeyDown.ahk
-#include TvNmHdr.ahk
-#include TvSortCb.ahk
-
 ; See the README for tested methods and properties.
 
 class TreeViewEx {
     static __New() {
         this.DeleteProp('__New')
         proto := this.Prototype
-        proto.Constructor := proto.Collection := ''
+        proto.Constructor := proto.Collection := proto.ParentSubclass := proto.Subclass :=
+        proto.CallbackOnExit := ''
         if !IsSet(TVS_HASBUTTONS) {
             TreeViewEx_SetConstants()
         }
         this.ClassName := Buffer(StrPut('SysTreeView32', TVEX_DEFAULT_ENCODING))
         StrPut('SysTreeView32', this.ClassName, TVEX_DEFAULT_ENCODING)
+        this.Collection_TVEX := TreeViewExCollection()
     }
-    __New(HwndGui, Options?) {
+    static Add(TreeViewExObj) {
+        return this.Collection_TVEX.InsertIfAbsent(TreeViewExObj)
+    }
+    static Delete(Hwnd) {
+        return this.Collection_TVEX.RemoveIf(Hwnd)
+    }
+    static Get(Hwnd) {
+        if this.Collection_TVEX.Find(Hwnd, &tvex) {
+            return tvex
+        } else {
+            throw UnsetItemError('Failed to find a value with the input hwnd.', , Hwnd)
+        }
+    }
+    __New(GuiObj, Options?) {
+        global __g := GuiObj
         options := TreeViewEx.Options(Options ?? unset)
-        this.HwndGui := HwndGui
-        g := this.Gui
+        this.HwndGui := GuiObj.Hwnd
         this.Hwnd := DllCall(
             g_proc_user32_CreateWindowExW
           , 'uint', options.ExStyle            ; dwExStyle
           , 'ptr', TreeViewEx.ClassName        ; lpClassName
           , 'ptr', options.WindowName
           , 'uint', options.Style              ; dwStyle
-          , 'int', IsNumber(options.X) ? options.X : g.MarginX            ; X
-          , 'int', IsNumber(options.Y) ? options.Y : g.MarginY            ; Y
+          , 'int', IsNumber(options.X) ? options.X : GuiObj.MarginX            ; X
+          , 'int', IsNumber(options.Y) ? options.Y : GuiObj.MarginY            ; Y
           , 'int', options.Width             ; nWidth
           , 'int', IsNumber(options.Height) ? options.Height : 10            ; nHeight
-          , 'ptr', HwndGui               ; hWndParent
+          , 'ptr', this.HwndGui               ; hWndParent
           , 'ptr', IsObject(options.Menu) ? options.Menu.Hwnd : options.Menu
           , 'ptr', options.Instance
           , 'ptr', options.Param
         )
+        TreeViewEx.Add(this)
         if options.Rows || !options.Height {
             WinMove(, , , (options.Rows || 1) * this.GetItemHeight(), this.Hwnd)
         }
@@ -113,7 +99,7 @@ class TreeViewEx {
     }
     /**
      * Creates a node object, then adds the node to the tree-view, then adds the node to the
-     * collection {@link TreeViewEx#Collection}.
+     * collection {@link TreeViewEx.Collection_TVEX}.
      *
      * @param {TvInsertStruct} Struct - An instance of {@link TvInsertStruct} that is sent with
      * TVM_INSERTITEMW.
@@ -146,7 +132,7 @@ class TreeViewEx {
         this.Collection.Default := node
         if handle := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
             node.Handle := handle
-            this.Collection.Set(handle, node)
+            this.Collection.InsertIfAbsent(node)
             this.Collection.Default := ''
             return node
         }
@@ -357,7 +343,7 @@ class TreeViewEx {
      */
     AddTemplate(Items*) {
         if !this.HasOwnProp('Templates') {
-            this.Templates := TreeViewExTemplatesCollection(false)
+            this.Templates := TreeViewExCollection_Template(false)
         }
         name := this.AddTemplate.Name
         this.DefineProp('AddTemplate', { Call: _AddTemplate })
@@ -373,31 +359,67 @@ class TreeViewEx {
     Collapse(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSE, Handle, this.Hwnd)
     CollapseReset(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, Handle, this.Hwnd)
     CopyItemId(Handle) => A_Clipboard := Handle
-    CopyText(Handle) => A_Clipboard := this.GetText(Handle)
+    CopyText(Handle) {
+        if this.GetText(Handle, &text) {
+            A_Clipboard := text
+        } else {
+            throw Error('Failed to get the TreeView item`'s text.')
+        }
+    }
     CreateDragImage(Handle) => SendMessage(TVM_CREATEDRAGIMAGE, 0, Handle, this.Hwnd)
+    CreateParentSubclass(SetOnExit := true) {
+        this.ParentSubclass := TreeViewEx_Subclass(TreeViewEx_ParentSubclassProc, this.HwndGui, this.Hwnd)
+        this.Subclass := TreeViewEx_WindowSubclass(TreeViewEx_ControlSubclassProc, this.Hwnd)
+        if SetOnExit {
+            this.CallbackOnExit := TreeViewEx_CallbackOnExit.Bind(this.Hwnd)
+            OnExit(this.CallbackOnExit, -1)
+        }
+    }
+    /**
+     * Delete all callbacks associated with a command code.
+     */
+    DeleteCommandCode(CommandCode) {
+        this.ParentSubclass.CommandDelete(this.HwndGui, this, CommandCode)
+    }
+    /**
+     * Delete all callbacks associated with a message code.
+     */
+    DeleteMessageCode(MessageCode) {
+        this.ParentSubclass.MessageDelete(this.HwndGui, this, MessageCode)
+    }
+    /**
+     * Delete all callbacks associated with a notify code.
+     */
+    DeleteNotifyCode(NotifyCode) {
+        this.ParentSubclass.NotifyDelete(this.HwndGui, this, NotifyCode)
+    }
     DeleteAll() => SendMessage(TVM_DELETEITEM, 0, 0, this.Hwnd)
+    DeleteAll_C() {
+        this.DeleteAll()
+        this.Collection.Length := 0
+    }
     DeleteItem(Handle) => SendMessage(TVM_DELETEITEM, 0, Handle, this.Hwnd)
     DeleteNode_C(Handle) {
-        node := this.Collection.Get(Handle)
-        this.Collection.Delete(Node)
+        this.Collection.Remove(Handle, &node)
         return node
     }
     Destroy() => DllCall(g_proc_user32_DestroyWindow, 'ptr', this.Hwnd, 'int')
     Dispose() {
-        this.DeleteAll()
-        if TreeViewExWindowSubclassManager.Collection.Has(this.HwndGui) {
-            if TreeViewExWindowSubclassManager.Collection.Get(this.HwndGui).Collection.Has(this.Hwnd) {
-                TreeViewExWindowSubclassManager.RemoveControl(this.HwndGui, this.Hwnd)
-            }
+        if this.GetCount() {
+            this.SetRedraw(0)
+            this.DeleteAll()
         }
-        if IsObject(this.Constructor)
-        && this.Constructor.HasOwnProp('Prototype')
-        && this.Constructor.Prototype.HasOwnProp('Ctrl')
-        && ObjPtr(this.Constructor.Prototype.Ctrl) == ObjPtr(this) {
-            ObjPtrAddRef(this)
-            this.DeleteProp('Constructor')
+        if this.ParentSubclass && this.ParentSubclass.WindowSubclass.IsInstalled {
+            this.ParentSubclass.WindowSubclass.Uninstall()
         }
-        this.Destroy()
+        if this.Subclass && this.Subclass.IsInstalled {
+            this.Subclass.Uninstall()
+        }
+        TreeViewEx.Delete(this.Hwnd)
+        if IsObject(this.CallbackOnExit) {
+            OnExit(this.CallbackOnExit, 0)
+            this.DeleteProp('CallbackOnExit')
+        }
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-editlabel}.
@@ -437,9 +459,23 @@ class TreeViewEx {
             }
         }
     }
+    /**
+     * @param {Integer} [Handle = 0] - The handle of the item for which its children will be enumerated.
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand. The expansion depth is also
+     * limited by the global variable `TVEX_EXPAND_DEPTH_LIMIT` to avoid unexpected infinite recursion
+     * situations. By default `TVEX_EXPAND_DEPTH_LIMIT` == 10. You can disable both `TVEX_EXPAND_DEPTH_LIMIT`
+     * and `MaxDepth` by setting them to a value less than or equal to 0.
+     */
     EnumChildrenRecursive(Handle := 0, MaxDepth := 0) {
         enum := { Child: SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd), Stack: [], Parent: Handle }
         enum.DefineProp('Call', { Call: _Enum })
+        if TVEX_EXPAND_DEPTH_LIMIT > 0 {
+            if MaxDepth > 0 {
+                MaxDepth := Min(MaxDepth, TVEX_EXPAND_DEPTH_LIMIT)
+            } else {
+                MaxDepth := TVEX_EXPAND_DEPTH_LIMIT
+            }
+        }
 
         return enum
 
@@ -447,7 +483,7 @@ class TreeViewEx {
             if Self.Child {
                 Parent := Self.Parent
                 Handle := Self.Child
-                if (MaxDepth <= 0 || Self.Stack.Length < MaxDepth) && child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                if MaxDepth <= 0 || Self.Stack.Length < MaxDepth && (child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)) {
                     Self.Stack.Push({ Parent: Self.Parent, Child: Handle })
                     Self.Parent := Handle
                     Self.Child := child
@@ -475,8 +511,122 @@ class TreeViewEx {
         }
     }
     Expand(Handle) => SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+    /**
+     * @param {Integer} Handle - The node to expand.
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand. The expansion depth is also
+     * limited by the global variable `TVEX_EXPAND_DEPTH_LIMIT` to avoid unexpected infinite recursion
+     * situations. By default `TVEX_EXPAND_DEPTH_LIMIT` == 10. You can disable both `TVEX_EXPAND_DEPTH_LIMIT`
+     * and `MaxDepth` by setting them to a value less than or equal to 0.
+     */
+    ExpandRecursive(Handle, MaxDepth := 0) {
+        if TVEX_EXPAND_DEPTH_LIMIT > 0 {
+            if MaxDepth > 0 {
+                MaxDepth := Min(MaxDepth, TVEX_EXPAND_DEPTH_LIMIT)
+            } else {
+                MaxDepth := TVEX_EXPAND_DEPTH_LIMIT
+            }
+        }
+        if MaxDepth > 0 {
+            depth := 0
+            _RecurseMaxDepth(Handle)
+        } else {
+            _Recurse(Handle)
+        }
+
+        return
+
+        _Recurse(Handle) {
+            this.Expand(Handle)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+        _RecurseMaxDepth(Handle) {
+            depth++
+            this.Expand(Handle)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                if MaxDepth <= 0 || depth < MaxDepth {
+                    _RecurseMaxDepth(child)
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
+                    if MaxDepth <= 0 || depth < MaxDepth {
+                        _RecurseMaxDepth(child)
+                    }
+                }
+            }
+            depth--
+        }
+    }
+    /**
+     * @param {Integer} Handle - The node to expand.
+     * @param {*} Callback - A `Func` or callable object that is called to determine if a node should
+     * be expanded.
+     * - Parameters:
+     *   1. {Integer} The tree-view item handle.
+     *   2. {Integer} The handle to the parent item of #1.
+     *   3. {Integer} The current depth (children of `Handle` are depth 1).
+     *   4. {TreeViewEx} The {@link TreeViewEx} object.
+     * - The function should return one of the following integers:
+     *   - 0 : Do not expand the node.
+     *   - 1 : Expand the node and iterate the node's children.
+     *   - 2 : Expand the node but do not iterate the node's children, move on to the next sibling node.
+     *   - 3 : Expand the node and stop  to direct {@link TreeViewEx.Prototype.ExpandRecursiveSelective}
+     *   to expand the node (and
+     *
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand. The expansion depth is also
+     * limited by the global variable `TVEX_EXPAND_DEPTH_LIMIT` to avoid unexpected infinite recursion
+     * situations. By default `TVEX_EXPAND_DEPTH_LIMIT` == 10. You can disable both `TVEX_EXPAND_DEPTH_LIMIT`
+     * and `MaxDepth` by setting them to a value less than or equal to 0.
+     */
+    ExpandRecursiveSelective(Handle, MaxDepth := 0) {
+        if TVEX_EXPAND_DEPTH_LIMIT > 0 {
+            if MaxDepth > 0 {
+                MaxDepth := Min(MaxDepth, TVEX_EXPAND_DEPTH_LIMIT)
+            } else {
+                MaxDepth := TVEX_EXPAND_DEPTH_LIMIT
+            }
+        }
+        if MaxDepth > 0 {
+            depth := 0
+            _RecurseMaxDepth(Handle)
+        } else {
+            _Recurse(Handle)
+        }
+
+        return
+
+        _Recurse(Handle) {
+            this.Expand(Handle)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+        _RecurseMaxDepth(Handle) {
+            depth++
+            this.Expand(Handle)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                if MaxDepth <= 0 || depth < MaxDepth {
+                    _RecurseMaxDepth(child)
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
+                    if MaxDepth <= 0 || depth < MaxDepth {
+                        _RecurseMaxDepth(child)
+                    }
+                }
+            }
+            depth--
+        }
+    }
     ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, Handle, this.Hwnd)
     GetBkColor() => SendMessage(TVM_GETBKCOLOR, 0, 0, this.Hwnd)
+    GetChild(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)
+    GetCount() => SendMessage(TVM_GETCOUNT, 0, 0, this.Hwnd)
     GetEditControl() => SendMessage(TVM_GETEDITCONTROL, 0, 0, this.Hwnd)
     GetExtendedStyle() => SendMessage(TVM_GETEXTENDEDSTYLE, 0, 0, this.Hwnd)
     /**
@@ -491,6 +641,16 @@ class TreeViewEx {
         }
         this.Font.Call()
         return this.Font
+    }
+    GetAdjacentRect(RectObj, Handle?, ContainerRect?, Dimension := 'X', Prefer := '', Padding := 0, InsufficientSpaceAction := 0) {
+        if !IsSet(Handle) {
+            Handle := this.GetSelected()
+        }
+        if !Handle {
+            return 0
+        }
+        RectMoveAdjacent(RectObj, this.GetItemRect(Handle), ContainerRect ?? unset, Dimension, Prefer, Padding, InsufficientSpaceAction)
+        return RectObj
     }
     GetImageList(ImageListType) => SendMessage(TVM_GETIMAGELIST, ImageListType, 0, this.Hwnd)
     GetIndent() => SendMessage(TVM_GETINDENT, 0, 0, this.Hwnd)
@@ -509,8 +669,14 @@ class TreeViewEx {
     }
     GetItem(Struct) => SendMessage(TVM_GETITEMW, 0, Struct.Ptr, this.Hwnd)
     GetItemHeight() => SendMessage(TVM_GETITEMHEIGHT, 0, 0, this.Hwnd)
-    GetItemRect(Handle) {
+    GetItemRect(Handle?) {
         rc := Rect()
+        if !IsSet(Handle) {
+            Handle := this.GetSelected()
+            if !Handle {
+                throw Error('No item is selected', -1)
+            }
+        }
         NumPut('ptr', Handle, rc, 0)
         if SendMessage(TVM_GETITEMRECT, 1, rc.ptr, this.Hwnd) {
             return rc
@@ -525,6 +691,7 @@ class TreeViewEx {
             return rc
         }
     }
+    GetNext(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd)
     /**
      * Creates a new node object passing `Handle` to the constructor. Adds the node to the collection
      * (if the collection has been created).
@@ -540,7 +707,7 @@ class TreeViewEx {
      * Retrieves a node object from the collection.
      */
     GetNode_C(Handle) {
-        return this.Collection.Get(Handle)
+        return this.Collection.GetValue(Handle)
     }
     /**
      * Retrieves a node object by calling `ObjPtrAddRef(TVITEM.lParam)`. This is only viable if
@@ -573,12 +740,16 @@ class TreeViewEx {
     GetRoot(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, Handle, this.Hwnd)
     GetScrollTime() => SendMessage(TVM_GETSCROLLTIME, 0, 0, this.Hwnd)
     GetSelected() => SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
-    GetText(Handle) {
+    GetText(Handle, &OutText) {
         struct := TvItem()
         struct.mask := TVIF_TEXT | TVIF_HANDLE
         struct.hItem := Handle
-        SendMessage(TVM_GETITEMW, 0, struct.Ptr, this.Hwnd)
-        return struct.pszText
+        struct.SetTextBuffer()
+        if SendMessage(TVM_GETITEMW, 0, struct.Ptr, this.Hwnd) {
+            OutText := struct.pszText
+            return 1
+        }
+        return 0
     }
     GetTextColor() => SendMessage(TVM_GETTEXTCOLOR, 0, 0, this.Hwnd)
     GetTooltips() => SendMessage(TVM_GETTOOLTIPS, 0, 0, this.Hwnd)
@@ -591,14 +762,13 @@ class TreeViewEx {
      */
     HitTest(X?, Y?) {
         if IsSet(X) && IsSet(Y) {
-            hitTestInfo := TvHitTestInfo(X, Y)
+            hitTestInfo := TvHitTestInfo()
+            hitTestInfo.X := X
+            hitTestInfo.Y := Y
         } else {
-            mouseMode := CoordMode('Mouse', 'Screen')
-            MouseGetPos(&X, &Y)
-            CoordMode('Mouse', mouseMode)
-            pt := Point(X, Y)
+            pt := Point.FromCursor()
             pt.ToClient(this.Hwnd, true)
-            hitTestInfo := TvHitTestInfo(pt.X, pt.Y)
+            hitTestInfo := TvHitTestInfo(pt)
         }
         if SendMessage(TVM_HITTEST, 0, hitTestInfo.Ptr, this.Hwnd) {
             return hitTestInfo
@@ -634,12 +804,53 @@ class TreeViewEx {
     }
     MapAccIdToHTreeItem(AccId) => SendMessage(TVM_MAPACCIDTOHTREEITEM, AccId, 0, this.Hwnd)
     MapHTreeItemToAccId(Handle) => SendMessage(TVM_MAPHTREEITEMTOACCID, Handle, 0, this.Hwnd)
-    OnNotify(NotifyCode, Callback?, Add := 1) {
-        if Add {
-            TreeViewExWindowSubclassManager.AddNotifyHandler(this.HwndGui, this, NotifyCode, Callback)
-        } else {
-            TreeViewExWindowSubclassManager.DeleteNotifyHandler(this.HwndGui, this.Hwnd, NotifyCode)
+    OnCommand(CommandCode, Callback, AddRemove := 1) {
+        if !this.HasOwnProp('ParentSubclass') {
+            this.CreateParentSubclass()
         }
+        if AddRemove {
+            this.ParentSubclass.CommandAdd(CommandCode, Callback, AddRemove)
+        } else {
+            this.ParentSubclass.CommandDelete(CommandCode, Callback)
+        }
+    }
+    OnMessage(MessageCode, Callback, AddRemove := 1) {
+        if !this.HasOwnProp('ParentSubclass') {
+            this.CreateParentSubclass()
+        }
+        if AddRemove {
+            this.ParentSubclass.MessageAdd(MessageCode, Callback, AddRemove)
+        } else {
+            this.ParentSubclass.MessageDelete(MessageCode, Callback)
+        }
+    }
+    OnNotify(NotifyCode, Callback, AddRemove := 1) {
+        if !this.HasOwnProp('ParentSubclass') {
+            this.CreateParentSubclass()
+        }
+        if AddRemove {
+            this.ParentSubclass.NotifyAdd(NotifyCode, Callback, AddRemove)
+        } else {
+            this.ParentSubclass.NotifyDelete(NotifyCode, Callback)
+        }
+    }
+    /**
+     * See {@link https://learn.microsoft.com/en-us/windows/win32/api/Winuser/nf-winuser-redrawwindow}.
+     * @param {Integer} [flags = RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN] -
+     * Zero or a combination of the flags lsited in the
+     * {@link https://learn.microsoft.com/en-us/windows/win32/api/Winuser/nf-winuser-redrawwindow documentation}.
+     */
+    Redraw(flags := RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN) {
+        return DllCall(
+            g_proc_user32_RedrawWindow
+          , 'ptr', this.Hwnd
+          , 'ptr', 0
+          , 'ptr', 0
+          , 'uint', flags
+        )
+    }
+    RemoveParentSubclass() {
+        this.ParentSubclass.Dispose()
     }
     Select(Handle) => SendMessage(TVM_SELECTITEM, TVGN_CARET, Handle, this.Hwnd)
     SetAutoScrollInfo(PixelsPerSecond, RedrawInterval) => SendMessage(TVM_SETAUTOSCROLLINFO, PixelsPerSecond, RedrawInterval, this.Hwnd)
@@ -648,6 +859,18 @@ class TreeViewEx {
         result := SendMessage(TVM_SETBORDER, Flags, (SizeVert & 0xFFFF) << 16 | (SizeHoriz & 0xFFFF), this.Hwnd)
         OutOldHoriz := result & 0xFFFF
         OutOldVert := (result >> 16) & 0xFFFF
+    }
+    SetContextMenu(MenuObj?, Options?, MenuItems?) {
+        if IsSet(TreeViewExContextMenu) {
+            this.OnMessage(WM_CONTEXTMENU, TreeViewEx_HandlerContextMenu)
+            this.ContextMenu := TreeViewExContextMenu(MenuObj ?? Menu(), Options ?? unset)
+            if IsSet(MenuItems) {
+                this.ContextMenu.AddObjectList(MenuItems)
+            }
+            return this.ContextMenu
+        } else {
+            throw Error('``TreeViewExContextMenu`` is not loaded.')
+        }
     }
     /**
      *
@@ -672,13 +895,25 @@ class TreeViewEx {
         this.Constructor := Class()
         this.Constructor.Base := NodeClass
         this.Constructor.Prototype := {
-            Ctrl: this
-          , HwndTv: this.Hwnd
+            HwndCtrl: this.Hwnd
           , __Class: NodeClass.Prototype.__Class
         }
-        ObjRelease(ObjPtr(this))
         ObjSetBase(this.Constructor.Prototype, NodeClass.Prototype)
-        this.Collection := TreeViewExNodeCollection()
+        this.Constructor.Prototype.DefineProp('Ctrl', { Get: TreeViewEx_GetTreeViewExCtrl })
+        this.Collection := TreeViewExCollection_Node()
+    }
+    /**
+     * @param {Boolean} Value - If true, allows changes in the window to be redrawn, and also calls
+     * {@link TreeViewEx.Prototype.Redraw}. If false, does not allow changes in the window to be redrawn.
+     *
+     * This is analagous to the
+     * {@link https://www.autohotkey.com/docs/v2/lib/Gui.htm#Add_Parameters "+/-Redraw" Gui.Control option}.
+     */
+    SetRedraw(Value) {
+        SendMessage(WM_SETREDRAW, Value, 0, this.Hwnd)
+        if Value {
+            this.Redraw()
+        }
     }
     SetScrollTime(TimeMs) => SendMessage(TVM_SETSCROLLTIME, TimeMs, 0, this.Hwnd)
     SetTextColor(Color) => SendMessage(TVM_SETTEXTCOLOR, 0, Color, this.Hwnd)
@@ -708,25 +943,8 @@ class TreeViewEx {
         return result
     }
     Toggle(Handle) => SendMessage(TVM_EXPAND, TVE_TOGGLE, Handle, this.Hwnd)
-    __Delete() {
-        this.Dispose()
-    }
-    __SetHandler(Callback, Code, Name, AddRemove) {
-        if IsObject(this.%Name%) {
-            this.OnNotify(Code, this.%Name%, 0)
-        }
-        this.%Name% := Callback
-        if Callback {
-            this.OnNotify(Code, Callback, AddRemove)
-        }
-    }
-    __SetHandlerDispInfo(Callback, Name) {
-        if Callback {
-            this.__Handler%Name% := Callback
-        } else {
-            this.__Handler%Name% := ''
-        }
-    }
+
+
     AutoHScroll {
         Get => SendMessage(TVM_GETEXTENDEDSTYLE, 0, 0, this.Hwnd) & TVS_EX_AUTOHSCROLL
         Set {
@@ -828,42 +1046,6 @@ class TreeViewEx {
         }
     }
     Gui => GuiFromHwnd(this.HwndGui)
-    HandlerChildrenGet {
-        Get => this.__HandlerChildrenGet
-        Set => this.SetHandlerChildren(Value)
-    }
-    HandlerGetDispInfo {
-        Get => this.__HandlerGetDispInfo
-        Set => this.SetHandlerGetDispInfo(Value)
-    }
-    HandlerImageGet {
-        Get => this.__HandlerImageGet
-        Set => this.SetHandlerImage(Value)
-    }
-    HandlerImageSet {
-        Get => this.__HandlerImageSet
-        Set => this.SetHandlerImage(, Value)
-    }
-    HandlerNameGet {
-        Get => this.__HandlerNameGet
-        Set => this.SetHandlerNameGet(Value)
-    }
-    HandlerNameSet {
-        Get => this.__HandlerNameSet
-        Set => this.SetHandlerNameSet(, Value)
-    }
-    HandlerSelectedImageGet {
-        Get => this.__HandlerSelectedImageGet
-        Set => this.SetHandlerSelectedImageGet(Value)
-    }
-    HandlerSelectedImageSet {
-        Get => this.__HandlerSelectedImageSet
-        Set => this.SetHandlerSelectedImageSet(, Value)
-    }
-    HandlerSetDispInfo {
-        Get => this.__HandlerSetDispInfo
-        Set => this.SetHandlerSetDispInfo(Value)
-    }
     HasButtons {
         Get => WinGetStyle(this.Hwnd) & TVS_HASBUTTONS
         Set {
@@ -1042,7 +1224,7 @@ class TreeViewEx {
                 TreeViewEx_SetConstants()
             }
             this.Default := {
-                Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE
+                Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER
               , ExStyle: TVS_EX_DOUBLEBUFFER | WS_EX_COMPOSITED
               , WindowName: 0
               , X: ''

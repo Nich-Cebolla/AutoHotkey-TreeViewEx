@@ -18,7 +18,7 @@ class test_EnumChildren {
         g := this.g := Gui('+Resize')
         tv := TreeViewEx(g.Hwnd, 'w600 r20 vTv')
         tv.AddObj(this.Obj)
-        tv.SetNodeConstructor(TreeViewExNode)
+        tv.SetNodeConstructor(TreeViewEx_Node)
         g.Add('Button', 'section vBtnEnum', 'Enum').OnEvent('Click', HClickButtonEnum)
         g.Add('Button', 'ys vBtnEnumRecursive', 'EnumRecursive').OnEvent('Click', HClickButtonEnumRecursive)
         g.Add('Edit', 'xs w600 vEdtInput')

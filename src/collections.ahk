@@ -24,7 +24,7 @@ TreeViewEx_CallbackValue_Node(value) {
 }
 
 
-class TreeViewExCollection_Template extends Container {
+class TreeViewExCollection_Template extends Map {
     __New(CaseSense := false) {
         this.CaseSense := CaseSense
     }

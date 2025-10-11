@@ -109,17 +109,20 @@ class TvItem extends TreeViewExStructBase {
             if Value == LPSTR_TEXTCALLBACKW {
                 NumPut('ptr', Value, this.Buffer, this.offset_pszText)
             } else {
-                if !(ptr := NumGet(this.Buffer, this.offset_pszText, 'ptr')) {
+                if ptr := NumGet(this.Buffer, this.offset_pszText, 'ptr') {
+                    if this.__pszText {
+                        bytes := StrPut(Value, TVEX_DEFAULT_ENCODING)
+                        if bytes > this.__pszText.Size {
+                            this.__pszText.Size := bytes
+                            NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
+                        }
+                    }
+                } else {
                     this.__pszText := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
                     ptr := this.__pszText.Ptr
                     NumPut('ptr', ptr, this.Buffer, this.offset_pszText)
                 }
-                if chars := this.cchTextMax {
-                    StrPut(SubStr(Value, 1, chars - 1), ptr, TVEX_DEFAULT_ENCODING)
-                } else {
-                    StrPut(Value, ptr, TVEX_DEFAULT_ENCODING)
-                    this.cchTextMax := StrLen(Value) + 1
-                }
+                StrPut(Value, this.__pszText, TVEX_DEFAULT_ENCODING)
             }
         }
     }

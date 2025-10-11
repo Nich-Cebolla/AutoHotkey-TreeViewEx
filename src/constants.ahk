@@ -30,7 +30,6 @@ TreeViewEx_SetConstants(force := false) {
     ))
 
 	TVEX_DEFAULT_ENCODING          := 'cp1200'
-    TVEX_EXPAND_DEPTH_LIMIT        := 10
     TVEX_DEFAULT_TEXT_MAX          := 256
 
 	TV_FIRST                       := 0x1100
@@ -372,6 +371,10 @@ TreeViewEx_SetConstants(force := false) {
     SC_CLOSE                       := 0xF060
     ; https://learn.microsoft.com/en-us/windows/win32/gdi/wm-setredraw
     WM_SETREDRAW                   := 0x000B
+    ; https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-getfont
+    WM_GETFONT                     := 0x0031
+    ; https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-setfont
+    WM_SETFONT                     := 0x0030
 
     ; https://learn.microsoft.com/en-us/windows/win32/api/Winuser/nf-winuser-redrawwindow
     RDW_INVALIDATE                 := 0x0001

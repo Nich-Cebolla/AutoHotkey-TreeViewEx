@@ -1,5 +1,6 @@
 ﻿
-#include ..\src\TreeViewEx.ahk
+#SingleInstance force
+#include ..\src\VENV.ahk
 
 test_EnumChildren()
 
@@ -9,38 +10,54 @@ class test_EnumChildren {
       , Children: [
             { Name: 'obj1-1', Children: [ 'obj1-1-1' ] }
           , { Name: 'obj1-2', Children: [ 'obj1-2-1' ] }
-          , { Name: 'obj1-3', Children: [ { Name: 'obj1-3-1', Children: [
-                'obj1-3-1-1', 'obj1-3-1-2', 'obj1-3-1-3', { Name: 'obj1-3-1-4', Children: [ 'obj1-3-1-4-1' ] }
-            ] } ] }
+          , {
+                Name: 'obj1-3'
+              , Children: [
+                    {
+                        Name: 'obj1-3-1'
+                      , Children: [
+                            'obj1-3-1-1'
+                          , 'obj1-3-1-2'
+                          , 'obj1-3-1-3'
+                          , {
+                                Name: 'obj1-3-1-4'
+                              , Children: [ 'obj1-3-1-4-1' ]
+                            }
+                        ]
+                    }
+                ]
+            }
         ]
     }
     static Call() {
         g := this.g := Gui('+Resize')
-        tv := TreeViewEx(g.Hwnd, 'w600 r20 vTv')
-        tv.AddObj(this.Obj)
-        tv.SetNodeConstructor(TreeViewEx_Node)
-        g.Add('Button', 'section vBtnEnum', 'Enum').OnEvent('Click', HClickButtonEnum)
+        tvex := this.tvex := TreeViewEx(g, { Width: 300, Rows: 12 })
+        tvex.AddObj(this.Obj)
+        tvex.GetPos(&x, &y, &w, &h)
+        g.Add('Button', 'x' x ' y' (y + h + g.MarginY) ' section vBtnEnum', 'Enum').OnEvent('Click', HClickButtonEnum)
         g.Add('Button', 'ys vBtnEnumRecursive', 'EnumRecursive').OnEvent('Click', HClickButtonEnumRecursive)
-        g.Add('Edit', 'xs w600 vEdtInput')
-        g.Add('Edit', 'xs w600 r20 vEdtDisplay')
-        g.show()
+        g.Add('Edit', 'xs w' w ' vEdtInput')
+        edt := g.Add('Edit', 'xs w' w ' r20 vEdtDisplay')
+        edt.GetPos(&x, &y, &w, &h)
+        g.Show('x100 y100 w' (x + w + g.MarginX) ' h' (y + h + g.MarginY))
+        tvex.ExpandRecursive()
 
         return
 
         HClickButtonEnum(Ctrl, *) {
             g := Ctrl.Gui
             display := g['EdtDisplay']
-            tv := g['Tv']
-            for id in tv.EnumChildren(g['EdtInput'].Text || 0) {
-                display.Text .= '`r`n' id ' :: ' tv.GetText(id)
+            tvex := test_EnumChildren.tvex
+            for id in tvex.EnumChildren(g['EdtInput'].Text || 0) {
+                display.Text .= '`r`n' id ' :: ' tvex.GetText(id)
             }
         }
         HClickButtonEnumRecursive(Ctrl, *) {
             g := Ctrl.Gui
             display := g['EdtDisplay']
-            tv := g['Tv']
-            for id, parent in tv.EnumChildrenRecursive(g['EdtInput'].Text || 0) {
-                display.Text .= '`r`n' id ' :: ' tv.GetText(id) ' :: ' parent
+            tvex := test_EnumChildren.tvex
+            for id, parent in tvex.EnumChildrenRecursive(g['EdtInput'].Text || 0) {
+                display.Text .= '`r`n' id ' :: ' tvex.GetText(id) ' :: ' parent
             }
         }
     }

@@ -1,17 +1,7 @@
 ﻿
 #SingleInstance force
 
-#include <tracer-config>
-global t_opt := TracerOptions(tcl('debug'))
-, t_grp := TracerGroup(t_opt, 2)
-, t := t_grp()
-#include <TestInterfaceMini>
 #include ..\src\VENV.ahk
-
-
-f2::Demo.SendEditLabel()
-f3::Demo.SendEndEditLabel(true)
-f4::Demo.SendEndEditLabel(false)
 
 !esc::ExitApp()
 
@@ -43,8 +33,8 @@ class Demo {
           , {
                 Width: 550
               , Rows: 20
-              , Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | TVS_EDITLABELS | WS_BORDER
-              , ExStyle: TVS_EX_DOUBLEBUFFER | WS_EX_COMPOSITED
+              , Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD
+                    | WS_CLIPSIBLINGS | WS_VISIBLE | TVS_EDITLABELS | WS_BORDER
             }
         )
 
@@ -77,7 +67,6 @@ class Demo {
         ; imgList := this.ImageList := ImageList(listPath)
         ; tvex.SetImageList(TVSIL_NORMAL, imgList.Handle)
         ; tvex.SetImageList(TVSIL_STATE, imgList.Handle)
-        ; Add root items
 
         ; Add the root nodes. Our TVN_GETDISPINFO handler tells the system that the nodes have children
         ; so the tree-view control displays the + symbol next to the node even though the child nodes
@@ -89,48 +78,15 @@ class Demo {
             tvex.AddNode(struct, obj)
         }
 
-        g.Show('x20 w600 y20 h600')
-
         tvex.GetPos(&x, &y, &w, &h)
-
         g.Add('Button', 'section x' x ' y' (y + h + 10) ' vBtnExit', 'Exit').OnEvent('Click', _Exit)
-        g.OnEvent('Close', (self, *) => self.Destroy())
-        tvex.SetContextMenu(, { ShowTooltips: true })
-        ; Show Gui
-        WinRedraw(g.Hwnd)
-        ; this.ti := TestInterfaceMini(Map('treeview', tvex, 'contextmenu', tvex.ContextMenu, 'demo', demo))
+        g.Show('x20 w600 y20 h600')
 
         return
 
-        HClickButtonGetText(Ctrl, *) {
-            g := Ctrl.Gui
-            tvex := g['tvex']
-            struct := TvItem()
-            struct.mask := TVIF_HANDLE | TVIF_TEXT
-            for handle, parent in tvex.EnumChildrenRecursive() {
-                struct.hItem := handle
-                SendMessage(TVM_GETITEMW, 0, struct.Ptr, tvex.Hwnd)
-                OutputDebug('Tick: ' A_TickCount ', Func: ' 'Button GetText: ' struct.pszText '`n')
-            }
-        }
-        HClickButtonDisposeTreeView(Ctrl, *) {
-            Demo.tvex.Dispose()
-        }
         _Exit(*) {
-            t.Log('Exiting.')
             ExitApp()
         }
-    }
-    static SendEditLabel() {
-        this.tvex.EditSelectedLabel()
-    }
-    static SendEndEditLabel(value) {
-        this.tvex.EndEditLabel(value)
-    }
-    static SendHitTest() {
-        hitTestInfo := this.tvex.HitTest()
-        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc '`n')
-        sleep 1
     }
 }
 
@@ -157,15 +113,12 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         struct.hParent := 0
         struct.hInsertAfter := TVI_LAST
     }
-    __New(Handle, Value) {
-        this.Handle := Handle
+    __New(Value) {
         this.Value := Value
         if IsObject(Value) {
             this.ImageGroup := 1
-            this.SelectedImageGroup := 1
         } else {
             this.ImageGroup := 2
-            this.SelectedImageGroup := 2
         }
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc '; Node: ' this.Handle '`n')
     }
@@ -218,7 +171,7 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         switch this.ImageGroup, 0 {
             case 1: return 1
-            case 2: return 3
+            case 2: return 2
         }
     }
     OnGetInfoName(Struct) {
@@ -242,7 +195,7 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
     OnGetInfoSelectedImage(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         switch this.ImageGroup, 0 {
-            case 1: return 2
+            case 1: return 3
             case 2: return 4
         }
     }

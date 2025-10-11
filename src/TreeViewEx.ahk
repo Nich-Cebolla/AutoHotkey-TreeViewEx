@@ -33,27 +33,29 @@ class TreeViewEx {
         }
     }
     __New(GuiObj, Options?) {
-        global __g := GuiObj
         options := TreeViewEx.Options(Options ?? unset)
         this.HwndGui := GuiObj.Hwnd
+        rc := WinRect(GuiObj.Hwnd, 1)
+        rc.ToClient(GuiObj.Hwnd, true)
         this.Hwnd := DllCall(
             g_proc_user32_CreateWindowExW
-          , 'uint', options.ExStyle            ; dwExStyle
-          , 'ptr', TreeViewEx.ClassName        ; lpClassName
-          , 'ptr', options.WindowName
-          , 'uint', options.Style              ; dwStyle
-          , 'int', IsNumber(options.X) ? options.X : GuiObj.MarginX            ; X
-          , 'int', IsNumber(options.Y) ? options.Y : GuiObj.MarginY            ; Y
-          , 'int', options.Width             ; nWidth
-          , 'int', IsNumber(options.Height) ? options.Height : 10            ; nHeight
-          , 'ptr', this.HwndGui               ; hWndParent
-          , 'ptr', IsObject(options.Menu) ? options.Menu.Hwnd : options.Menu
-          , 'ptr', options.Instance
-          , 'ptr', options.Param
+          , 'uint', options.ExStyle                                                 ; dwExStyle
+          , 'ptr', TreeViewEx.ClassName                                             ; lpClassName
+          , 'ptr', options.WindowName                                               ; lpWindowName
+          , 'uint', options.Style                                                   ; dwStyle
+          , 'int', rc.L + (IsNumber(options.X) ? options.X : GuiObj.MarginX)        ; x
+          , 'int', rc.T + (IsNumber(options.Y) ? options.Y : GuiObj.MarginY)        ; Y
+          , 'int', options.Width                                                    ; nWidth
+          , 'int', IsNumber(options.Height) ? options.Height : 10                   ; nHeight
+          , 'ptr', this.HwndGui                                                     ; hWndParent
+          , 'ptr', IsObject(options.Menu) ? options.Menu.Hwnd : options.Menu        ; hMenu
+          , 'ptr', options.Instance                                                 ; hInstance
+          , 'ptr', options.Param                                                    ; lpParam
         )
         TreeViewEx.Add(this)
+
         if options.Rows || !options.Height {
-            WinMove(, , , (options.Rows || 1) * this.GetItemHeight(), this.Hwnd)
+            WinMove(, , , (options.Rows || 1) * this.GetItemHeight() + (options.Style & WS_BORDER ? 2 : 0), this.Hwnd)
         }
     }
     /**
@@ -84,22 +86,20 @@ class TreeViewEx {
         if !IsObject(Struct) {
             Struct := this.Templates.Get(Struct)
         }
-        if Params.Length {
-            global g_TreeViewEx_Node := this.Constructor.Call(0, Params*)
-        } else {
-            global g_TreeViewEx_Node := this.Constructor.Call(0)
-        }
+        global g_TreeViewEx_Node := this.Constructor.Call(Params*)
         local node := g_TreeViewEx_Node
         Struct.lParam := ObjPtrAddRef(node)
         if handle := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
             node.Handle := handle
             g_TreeViewEx_Node := ''
             return node
+        } else {
+            throw Error('Sending ``TVM_INSERTITEMW`` failed.')
         }
     }
     /**
      * Creates a node object, then adds the node to the tree-view, then adds the node to the
-     * collection {@link TreeViewEx.Collection_TVEX}.
+     * collection {@link TreeViewEx#Collection}.
      *
      * @param {TvInsertStruct} Struct - An instance of {@link TvInsertStruct} that is sent with
      * TVM_INSERTITEMW.
@@ -121,20 +121,20 @@ class TreeViewEx {
         if !IsObject(Struct) {
             Struct := this.Templates.Get(Struct)
         }
-        if Params.Length {
-            node := this.Constructor.Call(0, Params*)
-        } else {
-            node := this.Constructor.Call(0)
-        }
+        global g_TreeViewEx_Node := this.Constructor.Call(Params*)
+        local node := g_TreeViewEx_Node
         if SetParam {
             Struct.lParam := ObjPtrAddRef(node)
         }
-        this.Collection.Default := node
         if handle := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
             node.Handle := handle
-            this.Collection.InsertIfAbsent(node)
-            this.Collection.Default := ''
+            if !this.Collection.InsertIfAbsent(node) {
+                throw Error('Handle already exists in the collection.', , handle)
+            }
+            g_TreeViewEx_Node := ''
             return node
+        } else {
+            throw Error('Sending ``TVM_INSERTITEMW`` failed.')
         }
     }
     /**
@@ -159,10 +159,10 @@ class TreeViewEx {
      * @param {Integer} [InitialParentId = 0] - The initial Handle under which to start adding items.
      * If 0, the first item is added as a root node.
      */
-    AddObj(Obj, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0) {
+    AddObj(Obj, InitialParentId := 0, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0) {
         struct := TvInsertStruct()
         struct.mask := TVIF_TEXT
-        this.AddObjListFromTemplate([ Obj ], struct, LabelProp, ChildrenProp, MaxDepth, InitialParentId)
+        this.AddObjListFromTemplate([ Obj ], struct, InitialParentId, LabelProp, ChildrenProp, MaxDepth)
     }
     /**
      * @param {Object[]|String[]} List - A list of objects or strings. The strings are added as items
@@ -188,10 +188,10 @@ class TreeViewEx {
      * @param {Integer} [InitialParentId = 0] - The initial Handle under which to start adding items.
      * If 0, the first item is added as a root node.
      */
-    AddObjList(List, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0) {
+    AddObjList(List, InitialParentId := 0, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0) {
         struct := TvInsertStruct()
         struct.mask := TVIF_TEXT
-        this.AddObjListFromTemplate(List, struct, LabelProp, ChildrenProp, MaxDepth, InitialParentId)
+        this.AddObjListFromTemplate(List, struct, InitialParentId, LabelProp, ChildrenProp, MaxDepth)
     }
     /**
      * Performs the same action as {@link TreeViewEx.Prototype.AddObjList}, but instead of specifying
@@ -227,7 +227,7 @@ class TreeViewEx {
      * @param {Integer} [InitialParentId = 0] - The initial Handle under which to start adding items.
      * If 0, the first item is added as a root node.
      */
-    AddObjListFromTemplate(List, Struct, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0, InitialParentId := 0) {
+    AddObjListFromTemplate(List, Struct, InitialParentId := 0, LabelProp := 'Name', ChildrenProp := 'Children', MaxDepth := 0) {
         if IsObject(Struct) {
             Struct := Struct.Clone()
         } else {
@@ -235,6 +235,7 @@ class TreeViewEx {
         }
         Struct.hParent := InitialParentId
         stack := ['']
+        this.SetRedraw(0)
         if MaxDepth > 0 {
             for val in List {
                 if IsObject(val) {
@@ -282,6 +283,9 @@ class TreeViewEx {
                 }
             }
         }
+        this.SetRedraw(1)
+
+        return
 
         _Process(List) {
             Struct.hParent := stack[-1]
@@ -357,14 +361,40 @@ class TreeViewEx {
         }
     }
     Collapse(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSE, Handle, this.Hwnd)
-    CollapseReset(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, Handle, this.Hwnd)
+    CollapseRecursive(Handle := 0) {
+        toCollapse := []
+        toCollapse.Capacity := this.GetCount()
+        if Handle {
+            _Recurse(Handle)
+        } else {
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+        loop toCollapse.Length {
+            SendMessage(TVM_EXPAND, TVE_COLLAPSE, toCollapse[-A_Index], this.Hwnd)
+        }
+
+        return
+
+        _Recurse(Handle) {
+            local child, _child
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                toCollapse.Push(Handle)
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+    }
+    CollapseReset(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSE | TVE_COLLAPSERESET, Handle, this.Hwnd)
     CopyItemId(Handle) => A_Clipboard := Handle
     CopyText(Handle) {
-        if this.GetText(Handle, &text) {
-            A_Clipboard := text
-        } else {
-            throw Error('Failed to get the TreeView item`'s text.')
-        }
+        A_Clipboard := this.GetText(Handle)
     }
     CreateDragImage(Handle) => SendMessage(TVM_CREATEDRAGIMAGE, 0, Handle, this.Hwnd)
     CreateParentSubclass(SetOnExit := true) {
@@ -440,11 +470,11 @@ class TreeViewEx {
     EndEditLabel(CancelChanges := false) => SendMessage(TVM_ENDEDITLABELNOW, CancelChanges, 0, this.Hwnd)
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-ensurevisible}.
-     * @param {Integer} Handle - The id of the item.
+     * @param {Integer} [Handle] - The id of the item. If unset, the first root node is used.
      * @returns {Integer} - Returns nonzero if the system scrolled the items in the tree-view control
      * and no items were expanded. Otherwise, the message returns zero.
      */
-    EnsureVisible(Handle) => SendMessage(TVM_ENSUREVISIBLE, 0, Handle, this.Hwnd)
+    EnsureVisible(Handle?) => SendMessage(TVM_ENSUREVISIBLE, 0, Handle ?? this.GetChild(), this.Hwnd)
     EnumChildren(Handle := 0) {
         child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)
         return _Enum
@@ -461,21 +491,11 @@ class TreeViewEx {
     }
     /**
      * @param {Integer} [Handle = 0] - The handle of the item for which its children will be enumerated.
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand. The expansion depth is also
-     * limited by the global variable `TVEX_EXPAND_DEPTH_LIMIT` to avoid unexpected infinite recursion
-     * situations. By default `TVEX_EXPAND_DEPTH_LIMIT` == 10. You can disable both `TVEX_EXPAND_DEPTH_LIMIT`
-     * and `MaxDepth` by setting them to a value less than or equal to 0.
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
      */
     EnumChildrenRecursive(Handle := 0, MaxDepth := 0) {
         enum := { Child: SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd), Stack: [], Parent: Handle }
         enum.DefineProp('Call', { Call: _Enum })
-        if TVEX_EXPAND_DEPTH_LIMIT > 0 {
-            if MaxDepth > 0 {
-                MaxDepth := Min(MaxDepth, TVEX_EXPAND_DEPTH_LIMIT)
-            } else {
-                MaxDepth := TVEX_EXPAND_DEPTH_LIMIT
-            }
-        }
 
         return enum
 
@@ -512,20 +532,10 @@ class TreeViewEx {
     }
     Expand(Handle) => SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
     /**
-     * @param {Integer} Handle - The node to expand.
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand. The expansion depth is also
-     * limited by the global variable `TVEX_EXPAND_DEPTH_LIMIT` to avoid unexpected infinite recursion
-     * situations. By default `TVEX_EXPAND_DEPTH_LIMIT` == 10. You can disable both `TVEX_EXPAND_DEPTH_LIMIT`
-     * and `MaxDepth` by setting them to a value less than or equal to 0.
+     * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
      */
-    ExpandRecursive(Handle, MaxDepth := 0) {
-        if TVEX_EXPAND_DEPTH_LIMIT > 0 {
-            if MaxDepth > 0 {
-                MaxDepth := Min(MaxDepth, TVEX_EXPAND_DEPTH_LIMIT)
-            } else {
-                MaxDepth := TVEX_EXPAND_DEPTH_LIMIT
-            }
-        }
+    ExpandRecursive(Handle := 0, MaxDepth := 0) {
         if MaxDepth > 0 {
             depth := 0
             _RecurseMaxDepth(Handle)
@@ -536,32 +546,34 @@ class TreeViewEx {
         return
 
         _Recurse(Handle) {
-            this.Expand(Handle)
+            SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
                 _Recurse(child)
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
                     _Recurse(child)
                 }
             }
         }
         _RecurseMaxDepth(Handle) {
             depth++
-            this.Expand(Handle)
+            SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
-                if MaxDepth <= 0 || depth < MaxDepth {
+                if depth < MaxDepth {
                     _RecurseMaxDepth(child)
                 }
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
-                    if MaxDepth <= 0 || depth < MaxDepth {
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    if depth < MaxDepth {
                         _RecurseMaxDepth(child)
                     }
                 }
             }
             depth--
         }
+        _Throw() {
+            throw Error('Sending message ``TVM_GETITEMW`` failed.', -1)
+        }
     }
     /**
-     * @param {Integer} Handle - The node to expand.
      * @param {*} Callback - A `Func` or callable object that is called to determine if a node should
      * be expanded.
      * - Parameters:
@@ -570,27 +582,21 @@ class TreeViewEx {
      *   3. {Integer} The current depth (children of `Handle` are depth 1).
      *   4. {TreeViewEx} The {@link TreeViewEx} object.
      * - The function should return one of the following integers:
-     *   - 0 : Do not expand the node.
+     *   - 0 : Do not expand the node and move on to the next sibling node.
      *   - 1 : Expand the node and iterate the node's children.
      *   - 2 : Expand the node but do not iterate the node's children, move on to the next sibling node.
-     *   - 3 : Expand the node and stop  to direct {@link TreeViewEx.Prototype.ExpandRecursiveSelective}
-     *   to expand the node (and
      *
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand. The expansion depth is also
-     * limited by the global variable `TVEX_EXPAND_DEPTH_LIMIT` to avoid unexpected infinite recursion
-     * situations. By default `TVEX_EXPAND_DEPTH_LIMIT` == 10. You can disable both `TVEX_EXPAND_DEPTH_LIMIT`
-     * and `MaxDepth` by setting them to a value less than or equal to 0.
+     * @param {Integer} [Handle = 0] - The node to expand. If 0, the root nodes are iterated and
+     * expanded, depending on the return value from `Callback`.
+     *
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
      */
-    ExpandRecursiveSelective(Handle, MaxDepth := 0) {
-        if TVEX_EXPAND_DEPTH_LIMIT > 0 {
-            if MaxDepth > 0 {
-                MaxDepth := Min(MaxDepth, TVEX_EXPAND_DEPTH_LIMIT)
-            } else {
-                MaxDepth := TVEX_EXPAND_DEPTH_LIMIT
-            }
-        }
+    ExpandRecursiveSelective(Callback, Handle := 0, MaxDepth := 0) {
+        depth := 0
+        item := TvItem()
+        item.mask := TVIF_CHILDREN
+        SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
         if MaxDepth > 0 {
-            depth := 0
             _RecurseMaxDepth(Handle)
         } else {
             _Recurse(Handle)
@@ -599,24 +605,74 @@ class TreeViewEx {
         return
 
         _Recurse(Handle) {
-            this.Expand(Handle)
+            local child
+            depth++
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
-                _Recurse(child)
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
-                    _Recurse(child)
+                item.hItem := child
+                if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
+                    throw OSError()
+                }
+                if item.cChildren {
+                    switch Callback(child, Handle, depth, this), 0 {
+                        case 0: ; do nothing
+                        case 1:
+                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                            _Recurse(child)
+                        case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                    }
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    item.hItem := child
+                    if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
+                        throw OSError()
+                    }
+                    if item.cChildren {
+                        switch Callback(child, Handle, depth, this), 0 {
+                            case 0: ; do nothing
+                            case 1:
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                _Recurse(child)
+                            case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                        }
+                    }
                 }
             }
+            depth--
         }
         _RecurseMaxDepth(Handle) {
+            local child
             depth++
-            this.Expand(Handle)
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
-                if MaxDepth <= 0 || depth < MaxDepth {
-                    _RecurseMaxDepth(child)
+                item.hItem := child
+                if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
+                    throw OSError()
                 }
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
-                    if MaxDepth <= 0 || depth < MaxDepth {
-                        _RecurseMaxDepth(child)
+                if item.cChildren {
+                    switch Callback(child, Handle, depth, this), 0 {
+                        case 0: ; do nothing
+                        case 1:
+                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                            if depth < MaxDepth {
+                                _RecurseMaxDepth(child)
+                            }
+                        case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                    }
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    item.hItem := child
+                    if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
+                        throw OSError()
+                    }
+                    if item.cChildren {
+                        switch Callback(child, Handle, depth, this), 0 {
+                            case 0: ; do nothing
+                            case 1:
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                if Depth < MaxDepth {
+                                    _RecurseMaxDepth(child)
+                                }
+                            case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                        }
                     }
                 }
             }
@@ -625,7 +681,7 @@ class TreeViewEx {
     }
     ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, Handle, this.Hwnd)
     GetBkColor() => SendMessage(TVM_GETBKCOLOR, 0, 0, this.Hwnd)
-    GetChild(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)
+    GetChild(Handle := 0) => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)
     GetCount() => SendMessage(TVM_GETCOUNT, 0, 0, this.Hwnd)
     GetEditControl() => SendMessage(TVM_GETEDITCONTROL, 0, 0, this.Hwnd)
     GetExtendedStyle() => SendMessage(TVM_GETEXTENDEDSTYLE, 0, 0, this.Hwnd)
@@ -723,6 +779,7 @@ class TreeViewEx {
     GetParent(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
     GetPos(&X?, &Y?, &W?, &H?) {
         rc := WinRect(this.Hwnd, 0)
+        rc.ToClient(this.HwndGui, true)
         X := rc.L
         y := rc.T
         W := rc.W
@@ -740,21 +797,29 @@ class TreeViewEx {
     GetRoot(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, Handle, this.Hwnd)
     GetScrollTime() => SendMessage(TVM_GETSCROLLTIME, 0, 0, this.Hwnd)
     GetSelected() => SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
-    GetText(Handle, &OutText) {
+    GetText(Handle) {
         struct := TvItem()
         struct.mask := TVIF_TEXT | TVIF_HANDLE
         struct.hItem := Handle
         struct.SetTextBuffer()
         if SendMessage(TVM_GETITEMW, 0, struct.Ptr, this.Hwnd) {
-            OutText := struct.pszText
-            return 1
+            return struct.pszText
         }
-        return 0
+        throw Error('Failed to get the item`'s text.')
     }
     GetTextColor() => SendMessage(TVM_GETTEXTCOLOR, 0, 0, this.Hwnd)
     GetTooltips() => SendMessage(TVM_GETTOOLTIPS, 0, 0, this.Hwnd)
     GetVisibleCount() => SendMessage(TVM_GETVISIBLECOUNT, 0, 0, this.Hwnd)
-    HasChildren(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) ? 1 : 0
+    HasChildren(Handle) {
+        item := TvItem()
+        item.mask := TVIF_CHILDREN
+        item.hItem := Handle
+        if SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
+            return item.cChildren
+        } else {
+            throw OSError()
+        }
+    }
     /**
      * If one or both of `X` and `Y` are unset, the mouse's position is used.
      * @param {Integer} [X] - The X-coordinate relative to the TreeView control (client coordinate).
@@ -860,16 +925,12 @@ class TreeViewEx {
         OutOldHoriz := result & 0xFFFF
         OutOldVert := (result >> 16) & 0xFFFF
     }
-    SetContextMenu(MenuObj?, Options?, MenuItems?) {
-        if IsSet(TreeViewExContextMenu) {
+    SetContextMenu(MenuExObj) {
+        if IsSet(MenuEx) && MenuExObj is MenuEx {
             this.OnMessage(WM_CONTEXTMENU, TreeViewEx_HandlerContextMenu)
-            this.ContextMenu := TreeViewExContextMenu(MenuObj ?? Menu(), Options ?? unset)
-            if IsSet(MenuItems) {
-                this.ContextMenu.AddObjectList(MenuItems)
-            }
-            return this.ContextMenu
+            this.ContextMenu := MenuExObj
         } else {
-            throw Error('``TreeViewExContextMenu`` is not loaded.')
+            throw TypeError('``MenuExObj`` must inherit from ``MenuEx``.')
         }
     }
     /**

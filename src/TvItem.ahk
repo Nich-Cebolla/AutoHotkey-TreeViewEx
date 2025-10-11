@@ -31,6 +31,7 @@ class TvItem extends TreeViewExStructBase {
         proto.offset_iSelectedImage  := 16 + A_PtrSize * 3
         proto.offset_cChildren       := 20 + A_PtrSize * 3
         proto.offset_lParam          := 24 + A_PtrSize * 3
+        proto.__pszText := ''
     }
     GetStateImageIndex() {
         return (this.state & TVIS_STATEIMAGEMASK) >> 12
@@ -110,12 +111,15 @@ class TvItem extends TreeViewExStructBase {
                 NumPut('ptr', Value, this.Buffer, this.offset_pszText)
             } else {
                 if ptr := NumGet(this.Buffer, this.offset_pszText, 'ptr') {
+                    bytes := StrPut(Value, TVEX_DEFAULT_ENCODING)
                     if this.__pszText {
-                        bytes := StrPut(Value, TVEX_DEFAULT_ENCODING)
                         if bytes > this.__pszText.Size {
                             this.__pszText.Size := bytes
                             NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
                         }
+                    } else {
+                        this.__pszText := Buffer(bytes)
+                        NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
                     }
                 } else {
                     this.__pszText := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))

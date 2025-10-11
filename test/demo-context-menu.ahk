@@ -34,8 +34,9 @@ class TreeViewExContextMenu extends MenuEx {
     ; if anything.
     HandlerItemAvailability(Ctrl, IsRightClick, Item, X, Y) {
         items := this.__Item
-        ; Since all of our methods act on the `Item` in some way, we only want to enable the menu items
-        ; if `Item` has a significant value.
+        ; Since most of our methods act on the `Item` in some way, we only want to enable the menu items
+        ; if `Item` has a significant value. The exception is "Collapse recursive" which can still
+        ; execute without `Item`.
         if Item {
             items.Get('Copy node ID').Enable()
             items.Get('Copy value').Enable()

@@ -660,7 +660,11 @@ class TreeViewEx {
      */
     EnumChildrenRecursive(Handle := 0, MaxDepth := 0) {
         enum := { Child: SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd), Stack: [], Parent: Handle }
-        enum.DefineProp('Call', { Call: _Enum })
+        if MaxDepth > 0 {
+            enum.DefineProp('Call', { Call: _EnumMaxDepth })
+        } else {
+            enum.DefineProp('Call', { Call: _Enum })
+        }
 
         return enum
 
@@ -668,7 +672,38 @@ class TreeViewEx {
             if Self.Child {
                 Parent := Self.Parent
                 Handle := Self.Child
-                if MaxDepth <= 0 || Self.Stack.Length < MaxDepth && (child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)) {
+                if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                    Self.Stack.Push({ Parent: Self.Parent, Child: Handle })
+                    Self.Parent := Handle
+                    Self.Child := child
+                } else if child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Handle, this.Hwnd) {
+                    Self.Child := child
+                } else if Self.Stack.Length {
+                    flag := false
+                    while Self.Stack.Length {
+                        obj := Self.Stack.Pop()
+                        if child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, obj.Child, this.Hwnd) {
+                            Self.Parent := obj.Parent
+                            Self.Child := child
+                            flag := true
+                            break
+                        }
+                    }
+                    if !flag {
+                        Self.Child := 0
+                    }
+                }
+                return 1
+            } else {
+                return 0
+            }
+        }
+
+        _EnumMaxDepth(Self, &Handle?, &Parent?) {
+            if Self.Child {
+                Parent := Self.Parent
+                Handle := Self.Child
+                if Self.Stack.Length < MaxDepth && (child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)) {
                     Self.Stack.Push({ Parent: Self.Parent, Child: Handle })
                     Self.Parent := Handle
                     Self.Child := child

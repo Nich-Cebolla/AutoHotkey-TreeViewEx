@@ -1,45 +1,11 @@
 ﻿
-TreeViewEx_CallbackValue_Hwnd(value) {
-    return value.Hwnd
-}
 class TreeViewExCollection extends Container {
     static __New() {
         this.DeleteProp('__New')
         proto := Container.CbNumber(TreeViewEx_CallbackValue_Hwnd)
-        proto.__Class := proto.__Class
+        proto.__Class := this.Prototype.__Class
         this.Prototype := proto
     }
-}
-
-class TreeViewExCollection_Node extends Container {
-    static __New() {
-        this.DeleteProp('__New')
-        proto := Container.CbNumber(TreeViewEx_CallbackValue_Handle)
-        proto.__Class := proto.__Class
-        this.Prototype := proto
-    }
-}
-TreeViewEx_CallbackValue_Handle(value) {
-    return value.Handle
-}
-
-
-class TreeViewExCollection_Template extends Map {
-    __New(CaseSense := false) {
-        this.CaseSense := CaseSense
-    }
-}
-
-class TreeViewExCollection_Code extends Container {
-    static __New() {
-        this.DeleteProp('__New')
-        proto := Container.CbNumber(TreeViewEx_CallbackValue_Code)
-        proto.__Class := proto.__Class
-        this.Prototype := proto
-    }
-}
-TreeViewEx_CallbackValue_Code(value) {
-    return value.Code
 }
 
 ; This does not use sort / find capabilities because the position where values are added depends
@@ -60,11 +26,35 @@ class TreeViewExCollection_Callback extends Container {
     }
 }
 
+class TreeViewExCollection_Code extends Container {
+    static __New() {
+        this.DeleteProp('__New')
+        proto := Container.CbNumber(TreeViewEx_CallbackValue_Code)
+        proto.__Class := this.Prototype.__Class
+        this.Prototype := proto
+    }
+}
+
 class TreeViewExCollection_LabelEditDestroyNotification extends Container {
     static __New() {
         this.DeleteProp('__New')
         proto := Container.CbNumber(TreeViewEx_CallbackValue_Handle)
-        proto.__Class := proto.__Class
+        proto.__Class := this.Prototype.__Class
         this.Prototype := proto
+    }
+}
+
+class TreeViewExCollection_Node extends Container {
+    static __New() {
+        this.DeleteProp('__New')
+        proto := Container.CbNumber(TreeViewEx_CallbackValue_Handle)
+        proto.__Class := this.Prototype.__Class
+        this.Prototype := proto
+    }
+}
+
+class TreeViewExCollection_Template extends Map {
+    __New(CaseSense := false) {
+        this.CaseSense := CaseSense
     }
 }

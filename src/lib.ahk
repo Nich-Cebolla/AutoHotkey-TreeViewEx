@@ -210,3 +210,13 @@ TreeViewEx_LabelEditSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass
       , 'ptr'
     )
 }
+
+TreeViewEx_CallbackValue_Hwnd(value) {
+    return value.Hwnd
+}
+TreeViewEx_CallbackValue_Handle(value) {
+    return value.Handle
+}
+TreeViewEx_CallbackValue_Code(value) {
+    return value.Code
+}

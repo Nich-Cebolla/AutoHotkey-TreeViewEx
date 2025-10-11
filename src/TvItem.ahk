@@ -125,7 +125,7 @@ class TvItem extends TreeViewExStructBase {
                     NumPut('ptr', ptr, this.Buffer, this.offset_pszText)
                 }
                 if chars := this.cchTextMax {
-                    StrPut(SubStr(Value, 1, chars), ptr, TVEX_DEFAULT_ENCODING)
+                    StrPut(SubStr(Value, 1, chars - 1), ptr, TVEX_DEFAULT_ENCODING)
                 } else {
                     StrPut(Value, ptr, TVEX_DEFAULT_ENCODING)
                 }

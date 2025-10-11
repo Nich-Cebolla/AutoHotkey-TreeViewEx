@@ -32,30 +32,204 @@ class TreeViewEx {
             throw UnsetItemError('Failed to find a value with the input hwnd.', , Hwnd)
         }
     }
+    /**
+     * {@link TreeViewEx} is a custom tree-view control. It does not inherit from `Gui.Control`
+     * nor `Gui.TreeView`, and so the behavior adding it is different from `Gui.Prototype.Add`.
+     *
+     * When the {@link TreeViewEx} control is created, it will not be affected by AutoHotkey's
+     * auto-positioning mechanic; your code will need to set the size and position options
+     * directly.
+     *
+     * If neither `Options.Height` nor `Options.Rows` are set, the height defaults to 1 row.
+     *
+     * When using `Options.Rows`, the height calculation automatically accounts for the WS_BORDER
+     * style, adding 2 additional pixels to the height.
+     *
+     * Style options are defined using WS and WS_EX style flag constants. Your code can use
+     * the global variables (e.g. WS_CHILD, WS_EX_COMPOSITED). If your code encounters a var unset
+     * error, call {@link TreeViewEx_SetConstants} any time before using the variables.
+     *
+     * Font options are defined using `Options.Font`. See {@link TreeViewEx_LogFont}.
+     *
+     * Most of the {@link https://learn.microsoft.com/en-us/windows/win32/controls/bumper-tree-view-control-reference-messages TVM messages}
+     * have been adapted into class instance methods; many of these also expose style and customization
+     * capabilities, and are included as available options on the `Options` object.
+     *
+     * @param {Gui} GuiObj - The `Gui` object on which to add the {@link TreeViewEx}.
+     *
+     * @param {Object} [Options] - An object with zero or more options as property : value pairs.
+     *
+     * See {@link https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw CreateWindowExW}
+     * for information about the CreateWindowExW options. Each CreateWindowExW parameter is associated
+     * with a property on the `Options` object.
+     *
+     * @param {Integer} [Options.AddExStyle] - ExStyle flags to add onto the default.
+     * The default is `TVS_EX_DOUBLEBUFFER | WS_EX_COMPOSITED`. Use `Options.AddExStyle` instead
+     * of `Options.ExStyle` when your intent is to use additional flags on top of the defaults. The
+     * default ExStyle flags are applicable for general use cases.
+     *
+     * @param {Integer} [Options.AddStyle] - Style flags to add onto the default.
+     * The default is `TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER`.
+     * Use `Options.AddStyle` instead of `Options.Style` when your intent is to use additional flags
+     * on top of the defaults. The default Style flags are applicable for general use cases.
+     *
+     * @param {Integer} [Options.BkColor] - A COLORREF value to set as the background color.
+     * Your code can use {@link TreeViewEx_RGB} to convert r, g, b values to COLORREF.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setbkcolor}.
+     *
+     * @param {Integer} [Options.ExStyle = TVS_EX_DOUBLEBUFFER | WS_EX_COMPOSITED] - The value to
+     * pass to the `dwExStyle` parameter of CreateWindowExW.
+     *
+     * @param {Object} [Options.Font] - An options object to pass to {@link TreeViewEx_LogFont},
+     * setting the font characteristics of the TreeViewEx control. The system may not honor all
+     * properties exposed by {@link TreeViewEx_LogFont}; if setting a property value does not invoke
+     * any difference in the TreeViewEx control's appearance, that property is likely not available
+     * for use for tree-view control text. See {@link TreeViewEx_LogFont.Prototype.__New} for
+     * the list of options.
+     *
+     * @param {Integer} [Options.Height] - The value to pass to the `nHeight` parameter of CreateWindowExW.
+     * Also see `Options.Rows`.
+     *
+     * @param {Integer} [Options.ImageListNormal] - The handle to an image list to use with selected,
+     * nonselected, and overlay images for the items of the TreeViewEx control. See my class
+     * {@link https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GDI/ImageList.ahk ImageList}
+     * to create an image list from a list of file paths.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setimagelist}.
+     *
+     * @param {Integer} [Options.ImageListState] - The handle to an image list to use with application-
+     * defined item states. A state image is displayed to the left of an item's selected or nonselected
+     * image. See my class
+     * {@link https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GDI/ImageList.ahk ImageList}
+     * to create an image list from a list of file paths.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setimagelist}.
+     *
+     * @param {Integer} [Options.Indent] - The width, in pixels, of indentation for the TreeViewEx control.
+     * If this value is less than the system-defined minimum width, the new width is set to the system-
+     * defined minimum.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setindent}.
+     *
+     * @param {Integer} [Options.InsertMarkColor] - A COLORREF value to set as the color used to
+     * draw the insertion mark for the tree view. Your code can use {@link TreeViewEx_RGB} to convert
+     * r, g, b values to COLORREF.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setinsertmarkcolor}.
+     *
+     * @param {Integer} [Options.Instance = 0] - The value to pass to the `hInstance` parameter of CreateWindowExW.
+     * Generally this should be left the default ( 0 ).
+     *
+     * @param {Integer} [Options.ItemHeight] - New height of every item in the tree view, in pixels.
+     * Heights less than 1 will be set to 1. If this argument is not even and the tree-view control
+     * does not have the TVS_NONEVENHEIGHT style, this value will be rounded down to the nearest even
+     * value.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setitemheight}.
+     *
+     * @param {Integer} [Options.LineColor] - A COLORREF value to set as the line color. Your code
+     * can use {@link TreeViewEx_RGB} to convert r, g, b values to COLORREF.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setlinecolor}.
+     *
+     * @param {Integer} [Options.Menu = 0] - The value to pass to the `hMenu` parameter of CreateWindowExW.
+     * In the context of a tree-view control, `hMenu` is a child-window identifier. Generally this
+     * should be left the default ( 0 ).
+     *
+     * @param {Integer} [Options.Param = 0] - The value to pass to the `lpParam` parameter of CreateWindowExW.
+     * Generally this should be left the default ( 0 ).
+     *
+     * @param {Integer} [Options.Rows = 0] - Use `Options.Rows` as an alternative to `Options.Height`.
+     * Similar to the `Gui.Control` option "r<n>", `Options.Rows` allows your code to set the height
+     * of the TreeViewEx as a number of rows that can be displayed in the control's client area
+     * concurrently.
+     *
+     * @param {Integer} [Options.ScrollTime] - Sets the maximum scroll time, in milliseconds, for
+     * the TreeViewEx control. The maximum scroll time is the longest amount of time that a scroll
+     * operation can take. Scrolling will be adjusted so that the scroll will take place within the
+     * maximum scroll time. A scroll operation may take less time than the maximum.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setscrolltime}.
+     *
+     * @param {Integer} [Options.Style = TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER] -
+     * The value to pass to the `dwStyle` parameter of CreateWindowExW.
+     *
+     * @param {Integer} [Options.TextColor] - A COLORREF value that contains the new text color.
+     * Your code can use {@link TreeViewEx_RGB} to convert r, g, b values to COLORREF.
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-settextcolor}.
+     *
+     * @param {Integer} [Options.Width = 100] - The value to pass to the `nWidth` parameter of
+     * CreateWindowExW.
+     *
+     * @param {Integer|String} [Options.WindowName = 0] -
+     * - If an integer, the address to a null-terminated string that is passed to the `lpWindowName`
+     *   parameter of CreateWindowExW.
+     * - If a string, the string to pass to the `lpWindowName` parameter of CreateWindowExW.
+     *
+     * @param {Integer} [Options.X] - Set `Options.X` with an integer to specify the x-coordinate
+     * at which to place the TreeViewEx control. The coordinate is relative to the top-left corner
+     * of the gui's client area. If an empty string, `GuiObj.MarginX` is used.
+     *
+     * @param {Integer} [Options.Y] - Set `Options.Y` with an integer to specify the Y-coordinate
+     * at which to place the TreeViewEY control. The coordinate is relative to the top-left corner
+     * of the gui's client area. If an empty string, `GuiObj.MarginY` is used.
+     *
+     */
     __New(GuiObj, Options?) {
         options := TreeViewEx.Options(Options ?? unset)
         this.HwndGui := GuiObj.Hwnd
         rc := WinRect(GuiObj.Hwnd, 1)
         rc.ToClient(GuiObj.Hwnd, true)
+        if IsNumber(options.WindowName) {
+            windowName := options.WindowName
+        } else {
+            windowName := Buffer(StrPut(options.WindowName, TVEX_DEFAULT_ENCODING))
+            StrPut(options.WindowName, windowName, TVEX_DEFAULT_ENCODING)
+        }
+        style := options.AddStyle ? options.Style | options.AddStyle : options.Style
         this.Hwnd := DllCall(
             g_proc_user32_CreateWindowExW
-          , 'uint', options.ExStyle                                                 ; dwExStyle
-          , 'ptr', TreeViewEx.ClassName                                             ; lpClassName
-          , 'ptr', options.WindowName                                               ; lpWindowName
-          , 'uint', options.Style                                                   ; dwStyle
-          , 'int', rc.L + (IsNumber(options.X) ? options.X : GuiObj.MarginX)        ; x
-          , 'int', rc.T + (IsNumber(options.Y) ? options.Y : GuiObj.MarginY)        ; Y
-          , 'int', options.Width                                                    ; nWidth
-          , 'int', IsNumber(options.Height) ? options.Height : 10                   ; nHeight
-          , 'ptr', this.HwndGui                                                     ; hWndParent
-          , 'ptr', IsObject(options.Menu) ? options.Menu.Hwnd : options.Menu        ; hMenu
-          , 'ptr', options.Instance                                                 ; hInstance
-          , 'ptr', options.Param                                                    ; lpParam
+          , 'uint', options.AddExStyle ? options.ExStyle | options.AddExStyle : options.ExStyle ; dwExStyle
+          , 'ptr', TreeViewEx.ClassName                                                         ; lpClassName
+          , 'ptr', windowName                                                                   ; lpWindowName
+          , 'uint', style                                                                       ; dwStyle
+          , 'int', rc.L + (IsNumber(options.X) ? options.X : GuiObj.MarginX)                    ; x
+          , 'int', rc.T + (IsNumber(options.Y) ? options.Y : GuiObj.MarginY)                    ; Y
+          , 'int', options.Width                                                                ; nWidth
+          , 'int', IsNumber(options.Height) ? options.Height : 1                                ; nHeight
+          , 'ptr', this.HwndGui                                                                 ; hWndParent
+          , 'ptr', options.Menu                                                                 ; hMenu
+          , 'ptr', options.Instance                                                             ; hInstance
+          , 'ptr', options.Param                                                                ; lpParam
         )
         TreeViewEx.Add(this)
 
-        if options.Rows || !options.Height {
-            WinMove(, , , (options.Rows || 1) * this.GetItemHeight() + (options.Style & WS_BORDER ? 2 : 0), this.Hwnd)
+        if options.BkColor {
+            this.SetBkColor(options.BkColor)
+        }
+        if options.Font {
+            this.DefineProp('Font', { Value: TreeViewEx_LogFont(this.Hwnd, options.Font) })
+        }
+        if options.ImageListNormal {
+            this.SetImageList(TVSIL_NORMAL, options.ImageListNormal)
+        }
+        if options.ImageListState {
+            this.SetImageList(TVSIL_STATE, options.ImageListState)
+        }
+        if options.Indent {
+            this.SetIndent(options.Indent)
+        }
+        if options.InsertMarkColor {
+            this.SetInsertMarkColor(options.InsertMarkColor)
+        }
+        if options.ItemHeight {
+            this.SetItemHeight(options.ItemHeight)
+        }
+        if options.LineColor {
+            this.SetLineColor(options.LineColor)
+        }
+        if options.ScrollTime {
+            this.SetScrollTime(options.ScrollTime)
+        }
+        if options.TextColor {
+            this.SetTextColor(options.TextColor)
+        }
+
+        if options.Rows || !IsNumber(options.Height) {
+            WinMove(, , , (options.Rows || 1) * this.GetItemHeight() + (style & WS_BORDER ? 2 : 0), this.Hwnd)
         }
     }
     /**
@@ -349,16 +523,7 @@ class TreeViewEx {
         if !this.HasOwnProp('Templates') {
             this.Templates := TreeViewExCollection_Template(false)
         }
-        name := this.AddTemplate.Name
-        this.DefineProp('AddTemplate', { Call: _AddTemplate })
-        this.AddTemplate.DefineProp('Name', { Value: name })
-        this.AddTemplate(Items*)
-
-        return
-
-        _AddTemplate(Self, Items*) {
-            this.Templates.Set(Items*)
-        }
+        this.Templates.Set(Items*)
     }
     Collapse(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSE, Handle, this.Hwnd)
     CollapseRecursive(Handle := 0) {
@@ -686,14 +851,14 @@ class TreeViewEx {
     GetEditControl() => SendMessage(TVM_GETEDITCONTROL, 0, 0, this.Hwnd)
     GetExtendedStyle() => SendMessage(TVM_GETEXTENDEDSTYLE, 0, 0, this.Hwnd)
     /**
-     * Creates a {@link TreeViewExLogFont} object and sets it to property "Font". Use the font object
-     * to adjust the control's font attributes. See {@link TreeViewExLogFont} for details.
+     * Creates a {@link TreeViewEx_LogFont} object and sets it to property "Font". Use the font object
+     * to adjust the control's font attributes. See {@link TreeViewEx_LogFont} for details.
      *
-     * @returns {TreeViewExLogFont}
+     * @returns {TreeViewEx_LogFont}
      */
     GetFont() {
         if !this.HasOwnProp('Font') {
-            this.Font := TreeViewExLogFont(this.Hwnd)
+            this.Font := TreeViewEx_LogFont(this.Hwnd)
         }
         this.Font.Call()
         return this.Font
@@ -797,6 +962,9 @@ class TreeViewEx {
     GetRoot(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, Handle, this.Hwnd)
     GetScrollTime() => SendMessage(TVM_GETSCROLLTIME, 0, 0, this.Hwnd)
     GetSelected() => SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
+    GetTemplate(Name) {
+        return this.Templates.Get(Name)
+    }
     GetText(Handle) {
         struct := TvItem()
         struct.mask := TVIF_TEXT | TVIF_HANDLE
@@ -920,11 +1088,6 @@ class TreeViewEx {
     Select(Handle) => SendMessage(TVM_SELECTITEM, TVGN_CARET, Handle, this.Hwnd)
     SetAutoScrollInfo(PixelsPerSecond, RedrawInterval) => SendMessage(TVM_SETAUTOSCROLLINFO, PixelsPerSecond, RedrawInterval, this.Hwnd)
     SetBkColor(Color) => SendMessage(TVM_SETBKCOLOR, 0, Color, this.Hwnd)
-    SetBorder(Flags, SizeHoriz, SizeVert, &OutOldHoriz?, &OutOldVert?) {
-        result := SendMessage(TVM_SETBORDER, Flags, (SizeVert & 0xFFFF) << 16 | (SizeHoriz & 0xFFFF), this.Hwnd)
-        OutOldHoriz := result & 0xFFFF
-        OutOldVert := (result >> 16) & 0xFFFF
-    }
     SetContextMenu(MenuExObj) {
         if IsSet(MenuEx) && MenuExObj is MenuEx {
             this.OnMessage(WM_CONTEXTMENU, TreeViewEx_HandlerContextMenu)
@@ -937,6 +1100,17 @@ class TreeViewEx {
      *
      */
     SetExtendedStyle(Value, Styles) => SendMessage(TVM_SETEXTENDEDSTYLE, Value, Styles, this.Hwnd)
+    /**
+     * Sets the height of the TreeViewEx control as a number of rows that can be displayed in the
+     * control's client area concurrently.
+     * @param {Integer} Rows - The number of rows.
+     * @returns {Integer} - The new height.
+     */
+    SetHeight(Rows) {
+        height := Rows * this.GetItemHeight() + (this.Border ? 2 : 0)
+        WinMove(, , , height)
+        return height
+    }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setimagelist}
      *
@@ -1013,6 +1187,16 @@ class TreeViewEx {
                 SendMessage(TVM_SETEXTENDEDSTYLE, TVS_EX_AUTOHSCROLL, TVS_EX_AUTOHSCROLL, this.Hwnd)
             } else {
                 SendMessage(TVM_SETEXTENDEDSTYLE, 0, TVS_EX_AUTOHSCROLL, this.Hwnd)
+            }
+        }
+    }
+    Border {
+        Get => WinGetStyle(this.Hwnd) & WS_BORDER
+        Set {
+            if Value {
+                WinSetStyle('+' WS_BORDER, this.Hwnd)
+            } else {
+                WinSetStyle('-' WS_BORDER, this.Hwnd)
             }
         }
     }
@@ -1094,6 +1278,15 @@ class TreeViewEx {
             } else {
                 SendMessage(TVM_SETEXTENDEDSTYLE, 0, TVS_EX_FADEINOUTEXPANDOS, this.Hwnd)
             }
+        }
+    }
+    Font {
+        Get {
+            this.DefineProp('Font', { Value: TreeViewEx_LogFont(this.Hwnd) })
+            return this.Font
+        }
+        Set {
+            this.DefineProp('Font', { Value: Value })
         }
     }
     FullRowselect {
@@ -1285,17 +1478,29 @@ class TreeViewEx {
                 TreeViewEx_SetConstants()
             }
             this.Default := {
-                Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER
+                AddExStyle: ''
+              , AddStyle: ''
+              , BkColor: ''
               , ExStyle: TVS_EX_DOUBLEBUFFER | WS_EX_COMPOSITED
+              , Font: ''
+              , Height: ''
+              , ImageListNormal: ''
+              , ImageListState: ''
+              , Indent: ''
+              , InsertMarkColor: ''
+              , Instance: 0
+              , ItemHeight: ''
+              , LineColor: ''
+              , Menu: 0
+              , Param: 0
+              , Rows: ''
+              , ScrollTime: ''
+              , Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER
+              , TextColor: ''
+              , Width: 100
               , WindowName: 0
               , X: ''
               , Y: ''
-              , Width: 100
-              , Height: ''
-              , Menu: 0
-              , Instance: 0
-              , Param: 0
-              , Rows: 0
             }
         }
         static Call(Options?) {

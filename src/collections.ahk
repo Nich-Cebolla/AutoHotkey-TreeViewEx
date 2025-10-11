@@ -14,12 +14,12 @@ class TreeViewExCollection extends Container {
 class TreeViewExCollection_Node extends Container {
     static __New() {
         this.DeleteProp('__New')
-        proto := Container.CbNumber(TreeViewEx_CallbackValue_Node)
+        proto := Container.CbNumber(TreeViewEx_CallbackValue_Handle)
         proto.__Class := proto.__Class
         this.Prototype := proto
     }
 }
-TreeViewEx_CallbackValue_Node(value) {
+TreeViewEx_CallbackValue_Handle(value) {
     return value.Handle
 }
 
@@ -57,5 +57,14 @@ class TreeViewExCollection_Callback extends Container {
             }
         }
         throw UnsetItemError('Callback not found.', , HasProp(Callback, 'Name') ? Callback.Name : '')
+    }
+}
+
+class TreeViewExCollection_LabelEditDestroyNotification extends Container {
+    static __New() {
+        this.DeleteProp('__New')
+        proto := Container.CbNumber(TreeViewEx_CallbackValue_Handle)
+        proto.__Class := proto.__Class
+        this.Prototype := proto
     }
 }

@@ -187,3 +187,26 @@ TreeViewEx_HandlerContextMenu(tvex, wParam, lParam, *) {
     }
     tvex.ContextMenu.Call(tvex, Handle, IsRightClick, X, Y)
 }
+
+TreeViewEx_RGB(r := 0, g := 0, b := 0) {
+    return (r & 0xFF) | ((g & 0xFF) << 8) | ((b & 0xFF) << 16)
+}
+TreeViewEx_ParseColorRef(colorref, &OutR?, &OutG?, &OutB?) {
+    OutR := colorref & 0xFF
+    OutG := (colorref >> 8) & 0xFF
+    OutB := (colorref >> 16) & 0xFF
+}
+
+TreeViewEx_LabelEditSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
+    if uMsg == WM_NCDESTROY {
+        TreeViewEx_LabelEditDestroyNotification.Process(HwndSubclass)
+    }
+    return DllCall(
+        'comctl32\DefSubclassProc'
+      , 'ptr', HwndSubclass
+      , 'uint', uMsg
+      , 'ptr', wParam
+      , 'ptr', lParam
+      , 'ptr'
+    )
+}

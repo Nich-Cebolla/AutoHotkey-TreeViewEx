@@ -14,6 +14,7 @@
 #include notify-node-c.ahk
 #include notify-node-ptr.ahk
 #include notify-node.ahk
+#include TreeViewEx_LabelEditDestroyNotification.ahk
 #include TreeViewEx_LogFont.ahk
 #include TreeViewEx_Node.ahk
 #include TreeViewEx_Subclass.ahk

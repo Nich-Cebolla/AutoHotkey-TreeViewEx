@@ -89,13 +89,12 @@ class TreeViewEx_WindowSubclass {
         if this.pfnSubclass {
             this.Uninstall()
         }
+        TreeViewEx_WindowSubclass.Ids.Delete(this.uIdSubclass)
         for prop in ['Hwnd', 'uIdSubclass', 'SubclassProc', 'dwRefData'] {
             if this.HasOwnProp(prop) {
                 this.DeleteProp(prop)
             }
         }
-        TreeViewEx_WindowSubclass.Ids.Delete(this.uIdSubclass)
-        this.uIdSubclass := 0
     }
     /**
      * Installs the subclass.

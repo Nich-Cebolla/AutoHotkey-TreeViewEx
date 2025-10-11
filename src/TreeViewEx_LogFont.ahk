@@ -8,7 +8,7 @@
  * @classdesc - A wrapper around the LOGFONT structure.
  * {@link https://learn.microsoft.com/en-us/windows/win32/api/dimm/ns-dimm-logfontw}
  */
-class TreeViewExLogFont extends TreeViewExStructBase {
+class TreeViewEx_LogFont extends TreeViewExStructBase {
     static __New() {
         this.DeleteProp('__New')
         Proto := this.Prototype
@@ -36,58 +36,40 @@ class TreeViewExLogFont extends TreeViewExStructBase {
         Proto.Handle := Proto.Hwnd := 0
     }
     /**
-     * Constructs a new `Logfont` object, optionally associating the object with a window handle.
-     * @class
+     * @param {Integer} [Hwnd = 0] - The window handle to associate with the {@link TreeViewEx_LogFont}
+     * object. If `Hwnd` is set with a nonzero value, {@link TreeViewEx_LogFont.Prototype.Call} is
+     * called to initialize this object's properties with values obtained from the window. If `Hwnd`
+     * is zero, the value of each property is 0.
      *
-     * @example
-     *  g := Gui()
-     *  edt := g.Add("Edit", "w100 r5 vEdt", "Hello, world!")
-     *  g.Show()
-     *  lf := Logfont(edt.Hwnd)
-     *  if faceName := Logfont.FontExist("Roboto Mono,Ubuntu Mono,Cascadia Mono") {
-     *      lf.FaceName := faceName
-     *  } else {
-     *      ; Get a generic monospaced font
-     *      lf.FaceName := ""
-     *      lf.Family := 0x30       ; FF_MODERN
-     *      lf.Pitch := 1           ; FIXED_PITCH
-     *  }
-     *  lf.FontSize := 15
-     *  lf.Apply()
-     * @
+     * @param {Object} [Options] - An object with zero or more options as property : value pairs.
+     * The value of any instance property can be assigned using the `Options` object.
      *
-     * @param {Integer} [Hwnd = 0] - The window handle to associate with the `Logfont` object. If
-     * `Hwnd` is set with a nonzero value, `Logfont.Prototype.Call` is called to initialize this
-     * `Logfont` object's properties with values obtained from the window. If `Hwnd` is zero, this
-     * `Logfont` object's properties will all be zero.
-     * @param {String} [Encoding] - The encoding used when getting and setting string values associated
-     * with LOGFONT members. The default encoding used by `Logfont` objects is UTF-16.
+     * @param {Integer} [Options.CharSet] - The value to assign to CharSet.
+     * @param {Integer} [Options.ClipPrecision] - The value to assign to ClipPrecision.
+     * @param {Integer} [Options.Escapement] - The value to assign to Escapement.
+     * @param {String} [Options.FaceName] - The value to assign to FaceName.
+     * @param {Integer} [Options.Family] - The value to assign to Family.
+     * @param {Integer} [Options.FontSize] - The value to assign to FontSize.
+     * @param {Integer} [Options.Height] - The value to assign to Height.
+     * @param {Integer} [Options.Italic] - The value to assign to Italic.
+     * @param {Integer} [Options.Orientation] - The value to assign to Orientation.
+     * @param {Integer} [Options.OutPrecision] - The value to assign to OutPrecision.
+     * @param {Integer} [Options.Pitch] - The value to assign to Pitch.
+     * @param {Integer} [Options.Quality] - The value to assign to Quality.
+     * @param {Integer} [Options.StrikeOut] - The value to assign to StrikeOut.
+     * @param {Integer} [Options.Underline] - The value to assign to Underline.
+     * @param {Integer} [Options.Weight] - The value to assign to Weight.
+     * @param {Integer} [Options.Width] - The value to assign to Width.
+     *
      * @return {Logfont}
      */
-    __New(Hwnd := 0, Encoding?) {
+    __New(Hwnd := 0, Options?) {
         /**
          * A reference to the buffer object which is used as the LOGFONT structure.
          * @memberof Logfont
          * @instance
          */
         this.Buffer := Buffer(this.cbSizeInstance, 0)
-        if IsSet(Encoding) {
-            /**
-             * The encoding to use with `StrPut` and `StrGet` when handling strings. Not seen
-             * here, the value of `Logfont.Prototype.Encoding` is "UTF-16".
-             * @memberof Logfont
-             * @instance
-             */
-            this.Encoding := Encoding
-        }
-        /**
-         * The handle to the font object created by this object. Initially, this object
-         * will not have yet created an object, so the handle is `0` until `Logfont.Prototype.Apply`
-         * is called.
-         * @memberof Logfont
-         * @instance
-         */
-        this.Handle := 0
         /**
          * The handle to the window associated with this object, if any.
          * @memberof Logfont
@@ -95,6 +77,19 @@ class TreeViewExLogFont extends TreeViewExStructBase {
          */
         if this.Hwnd := Hwnd {
             this()
+        }
+        if IsSet(Options) {
+            for opt in TreeViewEx_LogFont.Options.Number {
+                if HasProp(Options, opt) && IsNumber(options.%opt%) {
+                    this.%opt% := options.%opt%
+                }
+            }
+            for opt in TreeViewEx_LogFont.Options.String {
+                if HasProp(Options, opt) && StrLen(options.%opt%) {
+                    this.%opt% := options.%opt%
+                }
+            }
+            this.Apply()
         }
     }
     /**
@@ -120,7 +115,7 @@ class TreeViewExLogFont extends TreeViewExStructBase {
     Call(*) {
         hFont := SendMessage(WM_GETFONT,,, this.Hwnd)
         if !DllCall(g_proc_gdi32_GetObjectW, 'ptr', hFont, 'int', this.Size, 'ptr', this, 'uint') {
-            throw OSError('Failed to get font object.', -1)
+            throw OSError()
         }
     }
     /**
@@ -188,7 +183,7 @@ class TreeViewExLogFont extends TreeViewExStructBase {
      */
     FaceName {
         Get => StrGet(this.ptr + 28, 32, this.Encoding)
-        Set => StrPut(SubStr(Value, 1, 31), this.Ptr + 28, 32, this.Encoding)
+        Set => StrPut(SubStr(Value, 1, 31), this.Ptr + 28, 32, TVEX_DEFAULT_ENCODING)
     }
     /**
      * Gets or sets the font family.
@@ -298,5 +293,29 @@ class TreeViewExLogFont extends TreeViewExStructBase {
     Width {
         Get => NumGet(this, 4, 'int')
         Set => NumPut('int', Value, this, 4)
+    }
+
+    class Options {
+        static __New() {
+            this.DeleteProp('__New')
+            this.Number := [
+                'CharSet'
+              , 'ClipPrecision'
+              , 'Escapement'
+              , 'Family'
+              , 'FontSize'
+              , 'Height'
+              , 'Italic'
+              , 'Orientation'
+              , 'OutPrecision'
+              , 'Pitch'
+              , 'Quality'
+              , 'StrikeOut'
+              , 'Underline'
+              , 'Weight'
+              , 'Width'
+            ]
+            this.String := [ 'FaceName' ]
+        }
     }
 }

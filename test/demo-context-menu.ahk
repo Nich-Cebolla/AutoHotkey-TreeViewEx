@@ -23,9 +23,9 @@ class TreeViewExContextMenu extends MenuEx {
             */
             { Name: 'Copy node ID', Value: 'SelectCopyNodeId' }
           , { Name: 'Copy value', Value: 'SelectCopyValue' }
+          , { Name: 'Collapse recursive', Value: 'SelectCollapseRecursive' }
           , { Name: 'Expand', Value: 'SelectExpand' }
           , { Name: 'Expand recursive', Value: 'SelectExpandRecursive' }
-          , { Name: 'Collapse recursive', Value: 'SelectCollapseRecursive' }
         ]
     }
     ; When the context menu is activated, if the MenuEx object has a method "HandlerItemAvailability",

@@ -33,9 +33,19 @@ An AutoHotkey (AHK) library that extends the built-in tree-view control function
 
 ## Related libraries
 
-- [ImageList:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GDI/ImageList.ahk) Create an `ImageList` from an array of file paths or an array of bitmap pointers. For use with `TreeViewEx.Prototype.SetImageList` and related methods. For a usage example, see "test\test-ImageList.ahk". Requires several dependencies from the same [repository](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/).
-- [Logfont:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Logfont.ahk) A full-featured font object. `TreeViewEx` has a built-in [`TreeViewExLogFont`](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/TreeViewExLogFont.ahk) class which encapsulates the core functionality necessary for adjusting the control's font, but [`TreeViewExLogFont`](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/TreeViewExLogFont.ahk) does not include functionality related to enumerating a system's fonts and evaluating the fonts. If your application would benefit from being able to find the optimal font available on the system, check out [Logfont](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Logfont.ahk)
-- [`MenuEx`](https://github.com/Nich-Cebolla/AutoHotkey-MenuEx) - A class that streamlines the process
+- [`ImageList`:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GDI/ImageList.ahk)
+Create an `ImageList` from an array of file paths or an array of bitmap pointers. For use with
+`TreeViewEx.Prototype.SetImageList` and related methods. For a usage example, see
+test\test-ImageList.ahk. Requires several dependencies from the same
+[repository](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/).
+- [`Logfont`:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Logfont.ahk)
+A full-featured font object. `TreeViewEx` has a built-in
+[`TreeViewEx_LogFont`](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/TreeViewEx_LogFont.ahk)
+class which encapsulates the core functionality necessary for adjusting the control's font, but
+`TreeViewEx_LogFont` does not include functionality related to enumerating a system's fonts and
+evaluating the fonts. If your application would benefit from being able to find the optimal font
+available on the system, check out Logfont.
+- [`MenuEx`:](https://github.com/Nich-Cebolla/AutoHotkey-MenuEx) - A class that streamlines the process
 of creating a context menu. See file test\demo-context-menu.ahk for an example.
 
 # TreeViewEx

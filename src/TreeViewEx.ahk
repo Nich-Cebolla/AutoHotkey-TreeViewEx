@@ -692,6 +692,8 @@ class TreeViewEx {
                     if !flag {
                         Self.Child := 0
                     }
+                } else {
+                    Self.Child := 0
                 }
                 return 1
             } else {
@@ -723,6 +725,8 @@ class TreeViewEx {
                     if !flag {
                         Self.Child := 0
                     }
+                } else {
+                    Self.Child := 0
                 }
                 return 1
             } else {
@@ -1027,6 +1031,7 @@ class TreeViewEx {
      * If one or both of `X` and `Y` are unset, the mouse's position is used.
      * @param {Integer} [X] - The X-coordinate relative to the TreeView control (client coordinate).
      * @param {Integer} [Y] - The Y-coordinate relative to the TreeView control (client coordinate).
+     * @returns {TvHitTestInfo}
      */
     HitTest(X?, Y?) {
         if IsSet(X) && IsSet(Y) {
@@ -1038,37 +1043,59 @@ class TreeViewEx {
             pt.ToClient(this.Hwnd, true)
             hitTestInfo := TvHitTestInfo(pt)
         }
-        if SendMessage(TVM_HITTEST, 0, hitTestInfo.Ptr, this.Hwnd) {
-            return hitTestInfo
-        } else {
-            return ''
-        }
+        SendMessage(TVM_HITTEST, 0, hitTestInfo.Ptr, this.Hwnd)
+        return hitTestInfo
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-insertitem}
      * @param {TvInsertStruct} Struct - {@link TvInsertStruct}
      */
     Insert(Struct) => SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd)
-    IsExpanded(Handle) {
-        struct := TvItemEx()
-        struct.mask := TVIF_STATE | TVIF_HANDLE
-        struct.hItem := Handle
-        struct.stateMask := TVIS_EXPANDED
-        SendMessage(TVM_GETITEMW, 0, struct.Ptr, this.Hwnd)
-        return struct.mask & TVIS_EXPANDED
+    IsExpanded(Handle?) {
+        if !IsSet(Handle) {
+            Handle := this.GetSelected()
+        }
+        return SendMessage(TVM_GETITEMSTATE, Handle, TVIS_EXPANDED, this.Hwnd) & TVIS_EXPANDED
     }
     IsRoot(Handle) => !SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
-    IsAncestor(HandleDescendant, HandlePotentialAncestor) {
-        if HandleDescendant = HandlePotentialAncestor {
-            return 1
-        }
-        if h := HandlePotentialAncestor {
-            while h := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, h, this.Hwnd) {
-                if h = HandlePotentialAncestor {
-                    return 1
-                }
+    /**
+     * Returns 1 if `HandleDescentant` is a descendant of `HandlePotentialAncestor`.
+     *
+     * @param {Integer} [HandleDescendant] - A tree-view item handle. If unset, the handle to the
+     * currently selected item is used. If unset and no item is selected, the function returns 0.
+     *
+     * @param {Integer} [HandlePotentialAncestor] - A tree-view item handle. If unset, the handle to
+     * the currently selected item is used. If unset and no item is selected, the function returns 0.
+     *
+     * @returns {Integer} -
+     * - Returns 0 if `HandleDescendant` is unset and no item is selected.
+     * - Returns 0 if `HandlePotentialAncestor` is unset and no item is selected.
+     * - Returns 0 if `HandleDescendant = HandlePotentialAncestor`.
+     * - Returns 1 if `HandleDescendant` is a descendant of `HandlePotentialAncestor`.
+     */
+    IsAncestor(HandleDescendant?, HandlePotentialAncestor?) {
+        if !IsSet(HandleDescendant) {
+            HandleDescendant := this.GetSelected()
+            if !HandleDescendant {
+                return 0
             }
         }
+        if !IsSet(HandlePotentialAncestor) {
+            HandlePotentialAncestor := this.GetSelected()
+            if !HandlePotentialAncestor {
+                return 0
+            }
+        }
+        if HandleDescendant = HandlePotentialAncestor {
+            return 0
+        }
+        h := HandleDescendant
+        while h := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, h, this.Hwnd) {
+            if h = HandlePotentialAncestor {
+                return 1
+            }
+        }
+        return 0
     }
     MapAccIdToHTreeItem(AccId) => SendMessage(TVM_MAPACCIDTOHTREEITEM, AccId, 0, this.Hwnd)
     MapHTreeItemToAccId(Handle) => SendMessage(TVM_MAPHTREEITEMTOACCID, Handle, 0, this.Hwnd)
@@ -1159,6 +1186,45 @@ class TreeViewEx {
     SetInsertMark(Handle, AfterItem := false) => SendMessage(TVM_SETINSERTMARK, AfterItem, Handle, this.Hwnd)
     SetInsertMarkColor(Color) => SendMessage(TVM_SETINSERTMARKCOLOR, 0, Color, this.Hwnd)
     SetItem(Struct) => SendMessage(TVM_SETITEMW, 0, Struct.Ptr, this.Hwnd)
+    /**
+     * Example setting two states, both true states.
+     * @example
+     * ; Assume `tvex` references an existing TreeViewEx object and `handle` is a tree-view item handle.
+     * ; Set as expanded and selected.
+     * ; This would not expand the node, it only sets the state value.
+     * tvex.SetItemState(tv, TVIS_EXPANDED | TVIS_SELECTED, TVIS_EXPANDED | TVIS_SELECTED, handle)
+     * @
+     *
+     * Example setting two states, one true one false states.
+     * @example
+     * ; Assume `tvex` references an existing TreeViewEx object and `handle` is a tree-view item handle.
+     * ; Set as expanded and not selected.
+     * ; This would not expand or deselect the node, it only sets the state value.
+     * tvex.SetItemState(tv, TVIS_EXPANDED | TVIS_SELECTED, TVIS_EXPANDED, hItem)
+     * @
+     *
+     * Example setting two states, both false states.
+     * @example
+     * ; Assume `tvex` references an existing TreeViewEx object and `handle` is a tree-view item handle.
+     * ; Set as not expanded and not selected.
+     * ; This would not collapse or deselect the node, it only sets the state value.
+     * tvex.SetItemState(tv, TVIS_EXPANDED | TVIS_SELECTED, , hItem)
+     * @
+     */
+    SetItemState(StateMask, ValueMask := 0, Handle?) {
+        if !IsSet(Handle) {
+            Handle := this.GetSelected()
+        }
+        if !Handle {
+            return 0
+        }
+        struct := TvItem()
+        struct.mask := TVIF_STATE
+        struct.hItem := Handle
+        struct.stateMask := StateMask
+        struct.state := ValueMask
+        return SendMessage(TVM_SETITEMW, 0, struct.Ptr, this.Hwnd)
+    }
     SetItemHeight(Height) => SendMessage(TVM_SETITEMHEIGHT, Height, 0, this.Hwnd)
     SetLineColor(Color) => SendMessage(TVM_SETLINECOLOR, 0, Color, this.Hwnd)
     SetNodeConstructor(NodeClass) {

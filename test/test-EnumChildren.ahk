@@ -48,16 +48,18 @@ class test_EnumChildren {
             g := Ctrl.Gui
             display := g['EdtDisplay']
             tvex := test_EnumChildren.tvex
-            for id in tvex.EnumChildren(g['EdtInput'].Text || 0) {
-                display.Text .= '`r`n' id ' :: ' tvex.GetText(id)
+            display.Text := '`r`n' display.Text
+            for id in tvex.EnumChildren(Trim(g['EdtInput'].Text, '`s`t') || 0) {
+                display.Text := id ' :: ' tvex.GetText(id) '`r`n' display.Text
             }
         }
         HClickButtonEnumRecursive(Ctrl, *) {
             g := Ctrl.Gui
             display := g['EdtDisplay']
             tvex := test_EnumChildren.tvex
-            for id, parent in tvex.EnumChildrenRecursive(g['EdtInput'].Text || 0) {
-                display.Text .= '`r`n' id ' :: ' tvex.GetText(id) ' :: ' parent
+            display.Text := '`r`n' display.Text
+            for id, parent in tvex.EnumChildrenRecursive(Trim(g['EdtInput'].Text, '`s`t') || 0) {
+                display.Text := id ' :: ' tvex.GetText(id) ' :: ' parent '`r`n' display.text
             }
         }
     }

@@ -35,18 +35,16 @@ class TreeViewExContextMenu extends MenuEx {
     HandlerItemAvailability(Ctrl, IsRightClick, Item, X, Y) {
         items := this.__Item
         ; Since most of our methods act on the `Item` in some way, we only want to enable the menu items
-        ; if `Item` has a significant value. The exception is "Collapse recursive" which can still
-        ; execute without `Item`.
+        ; if `Item` has a significant value. The exceptions are "Collapse recursive" and "Expand recursive"
+        ; which can still execute without `Item`.
         if Item {
             items.Get('Copy node ID').Enable()
             items.Get('Copy value').Enable()
             items.Get('Expand').Enable()
-            items.Get('Expand recursive').Enable()
         } else {
             items.Get('Copy node ID').Disable()
             items.Get('Copy value').Disable()
             items.Get('Expand').Disable()
-            items.Get('Expand recursive').Disable()
         }
     }
     SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
@@ -74,50 +72,66 @@ class TreeViewExContextMenu extends MenuEx {
         return 'Expanded from node: ' Ctrl.GetText(Item)
     }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.ExpandRecursive(Item, 5)
-        return 'Expanded from node: ' Ctrl.GetText(Item)
+        if Item {
+            Ctrl.ExpandRecursive(Item || 0)
+            return 'Expanded from node: ' Ctrl.GetText(Item)
+        } else {
+            Ctrl.ExpandRecursive(0)
+            return 'Expanded root nodes'
+        }
     }
 }
 
 class demo_ContextMenu {
     static Call() {
         ; This is our example object that we are using to construct the nodes
-        Obj := {
-            Name: 'obj1'
-          , Children: [
-                { Name: 'obj1-1', Children: [ 'obj1-1-1' ] }
-              , { Name: 'obj1-2', Children: [ 'obj1-2-1' ] }
-              , {
-                    Name: 'obj1-3'
-                  , Children: [
-                        {
-                            Name: 'obj1-3-1'
-                          , Children: [
-                                'obj1-3-1-1'
-                              , 'obj1-3-1-2'
-                              , 'obj1-3-1-3'
-                              , {
-                                    Name: 'obj1-3-1-4'
-                                  , Children: [ 'obj1-3-1-4-1' ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
+        Obj := [
+            {
+                Name: 'obj1'
+              , Children: [
+                    { Name: 'obj1-1', Children: [ 'obj1-1-1' ] }
+                  , { Name: 'obj1-2', Children: [ 'obj1-2-1' ] }
+                  , {
+                        Name: 'obj1-3'
+                      , Children: [
+                            {
+                                Name: 'obj1-3-1'
+                              , Children: [
+                                    'obj1-3-1-1'
+                                  , 'obj1-3-1-2'
+                                  , 'obj1-3-1-3'
+                                  , {
+                                        Name: 'obj1-3-1-4'
+                                      , Children: [ 'obj1-3-1-4-1' ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+          , {
+                Name: 'obj2'
+              , Children: [
+                    'obj2-1'
+                  , 'obj2-2'
+                  , 'obj2-3'
+                  , 'obj2-4'
+                ]
+            }
+        ]
 
         ; Create Gui
         g := this.g := Gui('+Resize')
 
         ; Add TreeViewEx
-        tvex := this.tvex := TreeViewEx(g, { Width: 300, Rows: 12 })
+        tvex := this.tvex := TreeViewEx(g, { Width: 300, Rows: 17 })
 
         ; Add the context menu, with ShowTooltips enabled.
         tvex.SetContextMenu(TreeViewExContextMenu(, { ShowTooltips: true }))
 
         ; Add the nodes
-        tvex.AddObj(Obj)
+        tvex.AddObjList(Obj)
 
         ; Show the gui
         tvex.GetPos(&x, &y, &w, &h)

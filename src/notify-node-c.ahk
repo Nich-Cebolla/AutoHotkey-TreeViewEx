@@ -18,16 +18,16 @@ TreeViewEx_HandlerEndLabelEdit_Node_C(Ctrl, _tvDispInfoEx) {
 TreeViewEx_HandlerGetDispInfo_Node_C(Ctrl, _tvDispInfoEx) {
     if node := Ctrl.GetNode_C(_tvDispInfoEx.hItem) {
         if _tvDispInfoEx.mask & TVIF_TEXT {
-            _tvDispInfoEx.pszText := node.OnGetInfoName(_tvDispInfoEx)
+            node.OnGetInfoName(_tvDispInfoEx)
         }
         if _tvDispInfoEx.mask & TVIF_IMAGE {
-            _tvDispInfoEx.iImage := node.OnGetInfoImage(_tvDispInfoEx)
+            node.OnGetInfoImage(_tvDispInfoEx)
         }
         if _tvDispInfoEx.mask & TVIF_SELECTEDIMAGE {
-            _tvDispInfoEx.iSelectedImage := node.OnGetInfoSelectedImage(_tvDispInfoEx)
+            node.OnGetInfoSelectedImage(_tvDispInfoEx)
         }
         if _tvDispInfoEx.mask & TVIF_CHILDREN {
-            _tvDispInfoEx.cChildren := node.OnGetInfoChildren(_tvDispInfoEx)
+            node.OnGetInfoChildren(_tvDispInfoEx)
         }
     }
 }

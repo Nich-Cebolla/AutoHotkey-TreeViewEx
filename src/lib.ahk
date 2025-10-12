@@ -213,6 +213,17 @@ TreeViewEx_LabelEditSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass
 }
 
 /**
+ * Deselects any selected items when the mouse is not on-top of an item.
+ */
+TreeViewEx_OnClick(tvex, *) {
+    if hitTestInfo := tvex.HitTest() {
+        if !hitTestInfo.hItem {
+            tvex.Select(0)
+        }
+    }
+}
+
+/**
  * A {@link Container} CallbackValue function for the property "Hwnd".
  */
 TreeViewEx_CallbackValue_Hwnd(value) {

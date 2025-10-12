@@ -4,6 +4,9 @@
     License: MIT
 */
 
+/**
+ * {@link https://learn.microsoft.com/en-us/windows/win32/api/Commctrl/ns-commctrl-tvhittestinfo}.
+ */
 class TvHitTestInfo extends TreeViewExStructBase {
     static __New() {
         this.DeleteProp('__New')

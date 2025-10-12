@@ -13,7 +13,9 @@ class TvNmHdr extends TreeViewExStructBase {
         proto.offset_idFrom    := 0 + A_PtrSize * 1
         proto.offset_code      := 0 + A_PtrSize * 2
 
-        proto.Collection := Map(
+        proto.Collection := Map()
+        proto.Collection.Default := 0
+        proto.Collection.Set(
             TVN_ASYNCDRAW, TvAsyncDraw
           , TVN_BEGINDRAGW, NmTreeView
           , TVN_BEGINLABELEDITW, TvDispInfoEx
@@ -34,7 +36,11 @@ class TvNmHdr extends TreeViewExStructBase {
         )
     }
     Cast() {
-        return this.Collection.Get(this.code_int).FromPtr(this.Ptr)
+        if cls := this.Collection.Get(this.code_int) {
+            return cls.FromPtr(this.ptr)
+        } else {
+            return this
+        }
     }
     hwndFrom {
         Get => NumGet(this.Buffer, this.offset_hwndFrom, 'ptr')

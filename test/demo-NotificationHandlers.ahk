@@ -37,6 +37,9 @@ class Demo {
         tvex.OnNotify(TVN_ITEMEXPANDINGW, TreeViewEx_HandlerItemExpanding_Node_Ptr)
         tvex.OnNotify(TVN_SETDISPINFOW, TreeViewEx_HandlerSetDispInfo_Node_Ptr)
 
+        ; Deselects any items when clicking in an area within the TreeViewEx control but not on an item.
+        tvex.OnNotify(NM_CLICK, TreeViewEx_OnClick)
+
         ; Example object which defines the node structure.
         this.list := TreeViewExDemo_GetObj()
         ; Add the root nodes. Our TVN_GETDISPINFO handler tells the system that the nodes have children
@@ -59,7 +62,7 @@ class Demo {
 
         ; Add an exit button and display the gui.
         tvex.GetPos(&x, &y, &w, &h)
-        btn := g.Add('Button', 'section x' x ' y' (y + h + 10) ' vBtnExit', 'Exit')
+        btn := g.Add('Button', 'Section x' x ' y' (y + h + 10) ' vBtnExit', 'Exit')
         btn.OnEvent('Click', _Exit)
         btn.GetPos(, &y, , &h)
         g.Show('x20 y20 w' (x + w + g.MarginX) ' h' (y + h + g.MarginY))
@@ -97,6 +100,12 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
     }
     OnDeleteItem(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
+        ; We have to release the reference count so the node object can be destroyed.
+        ; We'll delete the children whenever a node is collapsed.
+        ; If a descendent node is currently selected, we have to un-select it.
+        if this.ctrl.IsAncestor(, this.Handle) {
+            this.ctrl.Select(0)
+        }
         ObjRelease(Struct.lParam_old)
     }
     OnEndLabelEdit(Struct) {
@@ -118,39 +127,37 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         return 1
     }
     OnGetInfoChildren(Struct) {
-        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
+        ; OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         if IsObject(this.Value) && HasProp(this.Value, 'Children') && this.Value.Children is Array && this.Value.Children.Length {
-            return 1
+            ; Node has children.
+            Struct.cChildren := 1
         } else {
-            return 0
+            ; Node does not have children.
+            Struct.cChildren := 0
         }
     }
     OnGetInfoName(Struct) {
-        if Struct {
-            OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
-        } else {
-            OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ""; Node: ' this.Handle '`n')
-        }
+        ; OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc '; Node: ' this.Handle '`n')
         if IsObject(this.Value) {
             if HasProp(this.Value, 'Name') {
                 if IsNumber(this.Value.Name) {
-                    return String(this.Value.Name)
+                    Struct.pszText := String(this.Value.Name)
                 } else {
-                    return '"' this.Value.Name '"'
+                    Struct.pszText := '"' this.Value.Name '"'
                 }
             } else {
-                return '{ ' Type(this.Value) ' }'
+                Struct.pszText := '{ ' Type(this.Value) ' }'
             }
         } else if IsNumber(this.Value) {
-            return String(this.Value)
+            Struct.pszText := String(this.Value)
         } else {
-            return '"' this.Value '"'
+            Struct.pszText := '"' this.Value '"'
         }
     }
     OnGetInfoTip(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         ; Just set the pszText property of the structure to define the tooltip text.
-        Struct.pszText := 'Tooltip for ' this.OnGetInfoName('')
+        Struct.pszText := 'Tooltip for ' this.Name
     }
     OnItemChanged(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
@@ -194,11 +201,19 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         switch Struct.action {
             case TVE_COLLAPSE, TVE_COLLAPSERESET:
-                TreeViewExDemo_ShowTooltip('Collapsed item ' this.OnGetInfoName(''))
+                ctrl := this.Ctrl
+                for child in ctrl.EnumChildren(this.Handle) {
+                    ; I defined the "__Delete" property to display a tooltip with the number of node
+                    ; objects destroyed. Whenever we collapse a node, we should see the tooltip display
+                    ; the correct number of child nodes that were beneath the collapsed node.
+                    ; If we see an incorrect value or no tooltip at all, there is a memory leak
+                    ; caused by incorrect handling of the reference count.
+                    ctrl.DeleteItem(child)
+                }
             case TVE_EXPAND:
-                TreeViewExDemo_ShowTooltip('Expanded item ' this.OnGetInfoName(''))
+                ; do nothing
             case TVE_EXPANDPARTIAL:
-                TreeViewExDemo_ShowTooltip('Partially expanded item ' this.OnGetInfoName(''))
+                ; do nothing
         }
     }
     OnItemExpanding(Struct) {
@@ -215,24 +230,7 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         ctrl := this.Ctrl
         switch Value {
             case TVE_COLLAPSE, TVE_COLLAPSERESET:
-                ; We'll delete all children to keep memory low
-                ; If a descendent node is currently selected, we have to un-select it
-                ctrl.Select(0)
-                for child in ctrl.EnumChildren(this.Handle) {
-                    ; I defined the "__Delete" property to display a tooltip with the number of node
-                    ; objects destroyed. Whenever we collapse a node, we should see the tooltip display
-                    ; the correct number of child nodes that were beneath the collapsed node.
-                    ; If we see an incorrect value or no tooltip at all, there is a memory leak
-                    ; caused by incorrect handling of the reference count.
-                    ctrl.DeleteItem(child)
-                }
-                ; Update the state flag
-                _struct := TvItem()
-                _struct.mask := TVIF_HANDLE | TVIF_STATE
-                _struct.hItem := this.Handle
-                _struct.state := 0
-                _struct.stateMask := TVIS_EXPANDED
-                ctrl.SetItem(_struct)
+                ; Do nothing
             case TVE_EXPAND:
                 ; Add items
                 struct := ctrl.GetTemplate('insert')
@@ -243,6 +241,7 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
             ; To be added.
             case TVE_EXPANDPARTIAL: throw Error('Invalid operation.', -1)
         }
+        return 0
     }
     OnSetInfoName(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
@@ -268,6 +267,28 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
             g_TreeViewExDemo_NodeDeleteCounter := NodeDeleteCounter()
         }
     }
+
+    Name {
+        Get {
+            if IsObject(this.Value) {
+                if HasProp(this.Value, 'Name') {
+                    if IsNumber(this.Value.Name) {
+                        return String(this.Value.Name)
+                    } else {
+                        return '"' this.Value.Name '"'
+                    }
+                } else {
+                    return '{ ' Type(this.Value) ' }'
+                }
+            } else if IsNumber(this.Value) {
+                return String(this.Value)
+            } else {
+                return '"' this.Value '"'
+            }
+        }
+    }
+
+
     static __New() {
         this.DeleteProp('__New')
         proto := this.Prototype
@@ -363,8 +384,8 @@ TreeViewExDemo_ShowTooltip(Str) {
     OM := CoordMode('Mouse', 'Screen')
     OT := CoordMode('Tooltip', 'Screen')
     MouseGetPos(&x, &y)
-    Tooltip(Str, x, y, Z)
-    SetTimer(_End.Bind(Z), -2000)
+    Tooltip(Str, x, y + Demo.tvex.GetItemHeight(), Z)
+    SetTimer(_End.Bind(Z), -1500)
     CoordMode('Mouse', OM)
     CoordMode('Tooltip', OT)
 

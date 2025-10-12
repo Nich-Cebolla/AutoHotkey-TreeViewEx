@@ -10,8 +10,7 @@ class TreeViewEx_LabelEditDestroyNotification {
         }
     }
     static Process(Handle) {
-        OutputDebug('Tick: ' A_TickCount '; Func: ' A_ThisFunc '`n')
-        this.Collection.DeleteValue(Handle, &LabelEditDestroyNotificationObj)
+        this.Collection.Remove(Handle, &LabelEditDestroyNotificationObj)
         LabelEditDestroyNotificationObj.WindowSubclass.Dispose()
         LabelEditDestroyNotificationObj.Callback.Call()
     }

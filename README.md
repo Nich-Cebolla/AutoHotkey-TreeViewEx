@@ -58,12 +58,21 @@ To use the library `#include` [VENV.ahk](https://github.com/Nich-Cebolla/AutoHot
 VENV.ahk packages all of the files together. To make the library available to any script, I recommend
 this setup:
 
-- Clone the repository
+- Clone the repository.
+  ```cmd
+  git clone https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
+  ```
 - Make a copy of the cloned repository and work with the copy. This is to avoid a situation where
   pulling an update breaks our scripts; by using a separate copy we can give ourselves time to review
   updates before updating the active copy.
-- Add a file "TreeViewEx.ahk" to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
-  In the file is a single statement: `#include C:\users\you\path\to\AutoHotkey-TreeViewEx-Active\src\VENV.ahk`
+  ```cmd
+  xcopy AutoHotkey-TreeViewEx AutoHotkey-TreeViewEx-Active /I /E
+  ```
+- Add a file TreeViewEx.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement.
+  ```ahk
+  #include C:\users\you\path\to\AutoHotkey-TreeViewEx-Active\src\VENV.ahk
+  ```
 
 With this setup, we can use `#include <TreeViewEx>` from any other script. Also, when we want to test
 updates to the repository, we just need to go into that file and change the path to the VENV.ahk
@@ -72,11 +81,20 @@ the path back when done.
 
 # Dependencies
 
-`TreeViewEx` requires the following dependencies:
+`TreeViewEx` requires the following dependencies. I recommend preparing the dependencies with a
+similar approach to the above steps.
 
 - [`Rect`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk)
+  - Clone [AutoHotkey-LibV2](https://github.com/Nich-Cebolla/AutoHotkey-LibV2), create a copy of
+    the directory to use as your active copy, then create a file Rect.ahk in your lib folder
+    with `#include C:\users\you\path\to\AutoHotkey-LibV2-Active\structs\Rect.ahk`.
 - [`LibraryManager`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk)
+  - `LibraryManager` is also in AutoHotkey-LibV2, so just create a file LibraryManager.ahk in your
+    lib folder with `#include C:\users\you\path\to\AutoHotkey-LibV2-Active\LibraryManager.ahk`.
 - [`Container`](https://github.com/Nich-Cebolla/AutoHotkey-Container)
+  - Clone [`Container`](https://github.com/Nich-Cebolla/AutoHotkey-Container), create a copy of the
+    directory to use as your active copy, then create a file Container.ahk in your lib folder
+    with `#include C:\users\you\path\to\Container-Active\src\Container.ahk`.
 
 # Demo
 
@@ -89,7 +107,7 @@ notifications are handled in the demo:
 - [TVN_DELETEITEMW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-deleteitem)
 - [TVN_ENDLABELEDITW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-endlabeledit)
 - [TVN_GETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo)
-- [TVM_GETINFOTIPW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getinfotip)
+- [TVN_GETINFOTIPW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getinfotip)
 - [TVN_ITEMCHANGEDW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemchanged)
 - [TVN_ITEMCHANGINGW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemchanging)
 - [TVN_ITEMEXPANDEDW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemexpanded)
@@ -118,7 +136,7 @@ None.
 |  AddObjList              |      X      |
 |  AddObjListFromTemplate  |      X      |
 |  AddTemplate             |      X      |
-|  Collapse                |             |
+|  Collapse                |      X      |
 |  CollapseReset           |             |
 |  CopyItemId              |             |
 |  CopyText                |             |
@@ -138,7 +156,7 @@ None.
 |  ExpandPartial           |             |
 |  ExpandRecursive         |      X      |
 |  GetBkColor              |             |
-|  GetEditControl          |             |
+|  GetEditControl          |      X      |
 |  GetExtendedStyle        |             |
 |  GetFont                 |             |
 |  GetImageList            |             |
@@ -146,7 +164,7 @@ None.
 |  GetInsertMarkColor      |             |
 |  GetISearchString        |             |
 |  GetItem                 |      X      |
-|  GetItemHeight           |             |
+|  GetItemHeight           |      X      |
 |  GetItemRect             |      X      |
 |  GetItemState            |             |
 |  GetLineColor            |             |
@@ -180,7 +198,7 @@ None.
 |  SetBorder               |             |
 |  SetContextMenu          |      X      |
 |  SetExtendedStyle        |             |
-|  SetImageList            |      X      |
+|  SetImageList            |             |
 |  SetIndent               |             |
 |  SetInsertMark           |             |
 |  SetInsertMarkColor      |             |
@@ -192,7 +210,7 @@ None.
 |  SetTextColor            |             |
 |  SetTooltips             |             |
 |  ShowInfoTip             |             |
-|  SortChildren            |      X      |
+|  SortChildren            |             |
 |  SortChildrenCb          |             |
 |  Toggle                  |             |
 |  __Delete                |             |
@@ -243,11 +261,13 @@ None.
 
 ## TreeViewEx - Tested notification handlers
 
-`TreeViewEx` currently offers three sets of notification handlers, each using a different approach to managing the item collection on our side of the code.
+`TreeViewEx` currently offers three sets of notification handlers, each using a different approach to
+managing the item collection on our side of the code.
 
 ### TreeViewEx - Tested notification handlers - Node
 
-These are the functions in file "src\notify-node.ahk". They get the node object by calling `TreeViewEx.Prototype.GetNode(Handle)`, which calls `TreeViewExObj.Constructor(Handle)`.
+These are the functions in file "src\notify-node.ahk". They get the node object by calling
+`TreeViewEx.Prototype.GetNode(Handle)`, which calls `TreeViewExObj.Constructor(Handle)`.
 
 |  Name                                   |  Is Tested  |
 |  ---------------------------------------|-----------  |
@@ -265,7 +285,8 @@ These are the functions in file "src\notify-node.ahk". They get the node object 
 
 ### TreeViewEx - Tested notification handlers - Node_C
 
-These are the functions in file "src\notify-node-c.ahk". They get the node object by calling `TreeViewEx.Prototype.GetNode_C(Handle)`, which accesses `TreeViewExObj.Collection.Get(Handle)`.
+These are the functions in file "src\notify-node-c.ahk". They get the node object by calling
+`TreeViewEx.Prototype.GetNode_C(Handle)`, which accesses `TreeViewExObj.Collection.Get(Handle)`.
 
 |  Name                                     |  Is Tested  |
 |  -----------------------------------------|-----------  |
@@ -283,7 +304,8 @@ These are the functions in file "src\notify-node-c.ahk". They get the node objec
 
 ### TreeViewEx - Tested notification handlers - Node_Ptr
 
-These are the functions in file "src\notify-node-ptr.ahk". They get the node object by calling `node := ObjFromPtrAddRef(struct.lParam)`.
+These are the functions in file "src\notify-node-ptr.ahk". They get the node object by calling
+`node := ObjFromPtrAddRef(struct.lParam)`.
 
 |  Name                                       |  Is Tested  |
 |  -------------------------------------------|-----------  |
@@ -291,7 +313,7 @@ These are the functions in file "src\notify-node-ptr.ahk". They get the node obj
 |  TreeViewEx_HandlerDeleteItem_Node_Ptr      |      X      |
 |  TreeViewEx_HandlerEndLabelEdit_Node_Ptr    |      X      |
 |  TreeViewEx_HandlerGetDispInfo_Node_Ptr     |      X      |
-|  TreeViewEx_HandlerGetInfoTip_Node_Ptr      |             |
+|  TreeViewEx_HandlerGetInfoTip_Node_Ptr      |      X      |
 |  TreeViewEx_HandlerItemChanged_Node_Ptr     |      X      |
 |  TreeViewEx_HandlerItemChanging_Node_Ptr    |      X      |
 |  TreeViewEx_HandlerItemExpanded_Node_Ptr    |      X      |
@@ -301,41 +323,84 @@ These are the functions in file "src\notify-node-ptr.ahk". They get the node obj
 
 # TreeViewEx_Node
 
-Each instance of `TreeViewEx_Node` has a property "Handle" which is set with the HTREEITEM handle. This is the same value as the `ItemID` parameter used by various `TreeView` methods as described in the [AutoHotkey documentation](https://www.autohotkey.com/docs/v2/lib/TreeView.htm). For example, the first parameter of [TreeView.Prototype.Modify](https://www.autohotkey.com/docs/v2/lib/TreeView.htm#Modify), expects an HTREEITEM handle. When you call a method or access a property from a `TreeViewEx_Node` instance, in most cases it calls a function which sends a TVM message where the `wParam` or `lParam` is expected to be an HTREEITEM handle.
+Each instance of `TreeViewEx_Node` has a property "Handle" which is set with the HTREEITEM handle.
+This is the same value as the `ItemID` parameter used by various `TreeView` methods as described in
+the [AutoHotkey documentation](https://www.autohotkey.com/docs/v2/lib/TreeView.htm). For example,
+the first parameter of [TreeView.Prototype.Modify](https://www.autohotkey.com/docs/v2/lib/TreeView.htm#Modify),
+expects an HTREEITEM handle. When you call a method or access a property from a `TreeViewEx_Node`
+instance, in most cases it calls a function which sends a TVM message where the `wParam` or `lParam`
+is expected to be an HTREEITEM handle.
 
 ## Extending TreeViewEx_Node
 
-`TreeViewEx_Node` is intended to be extended and coupled with callback functions passed to one or more of `TreeViewEx.Prototype.SetChildrenHandler`, `TreeViewEx.Prototype.SetImageHandler`, `TreeViewEx.Prototype.SetNameHandler`, `TreeViewEx.Prototype.SetSelectedImageHandler`. This allows our code to reduce memory overhead and increase customizability by controlling these characteristics of the tree-view items dynamically.
+`TreeViewEx_Node` is intended to be extended and coupled with callback functions passed to
+`TreeViewEx.Prototype.OnNotify`. This allows our code to reduce memory overhead and increase
+customizability by controlling characteristics of the tree-view items dynamically.
 
-This section needs more work and there may be some delay before I get back to writing it. Use the [demo file](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/test/demo-NotificationHandlers.ahk) as a guide, and if something is unclear or you have a question, message [@Cebolla](https://www.autohotkey.com/boards/memberlist.php?mode=viewprofile&u=170932) on [AutoHotkey.com](https://www.autohotkey.com/boards/).
+This section needs more work and there may be some delay before I get back to writing it. Use the
+[demo file](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/test/demo-NotificationHandlers.ahk)
+as a guide, and if something is unclear or you have a question, message
+[@Cebolla](https://www.autohotkey.com/boards/memberlist.php?mode=viewprofile&u=170932) on
+[AutoHotkey.com](https://www.autohotkey.com/boards/).
 
 
 ### TVN_GETDISPINFO
 
-For [TVN_GETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo) notifications, your function is expected to fill the members of the [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure with the requested information. Your code does not need to calculate any of the byte offsets, this is already done for you by the [TvDispInfoEx](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/TvDispInfoEx.ahk) class. Your code can simply assign a value to the appropriate property.
+For [TVN_GETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo)
+notifications, your function is expected to fill the members of the
+[TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure
+with the requested information. Your code does not need to calculate any of the byte offsets, this
+is already done for you by the
+[TvDispInfoEx](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/TvDispInfoEx.ahk)
+class. Your code can simply assign a value to the appropriate property.
 
-[TVN_GETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo) is only sent if the relevant member of a tree-view item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure has been set with a specific value:
-- The `pszText` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `LPSTR_TEXTCALLBACK` value (-1).
-- The `iImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `I_IMAGECALLBACK` value (-1).
-- The `iSelectedImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `I_IMAGECALLBACK` value (-1).
-- The `cChildren` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `I_CHILDRENCALLBACK` value (-1).
+[TVN_GETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo) is only
+sent if the relevant member of a tree-view item's
+[TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure
+has been set with a specific value:
+- The `pszText` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `LPSTR_TEXTCALLBACK` value (-1).
+- The `iImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `I_IMAGECALLBACK` value (-1).
+- The `iSelectedImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `I_IMAGECALLBACK` value (-1).
+- The `cChildren` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `I_CHILDRENCALLBACK` value (-1).
 
 ### TVN_SETDISPINFO
 
-[TVN_SETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo) is only sent if the relevant member of a tree-view item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure has been set with a specific value. Unlike [TVN_GETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo) which has four related members, `TVN_SETDISPINFO` only has three:
-- The `pszText` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `LPSTR_TEXTCALLBACK` value (-1).
-- The `iImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `I_IMAGECALLBACK` value (-1).
-- The `iSelectedImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure is the `I_IMAGECALLBACK` value (-1).
+[TVN_SETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo) is only
+sent if the relevant member of a tree-view item's
+[TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw) structure
+has been set with a specific value. Unlike
+[TVN_GETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo) which has
+four related members, `TVN_SETDISPINFO` only has three:
+- The `pszText` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `LPSTR_TEXTCALLBACK` value (-1).
+- The `iImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `I_IMAGECALLBACK` value (-1).
+- The `iSelectedImage` member of the item's [TVITEMW](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/ns-commctrl-tvitemw)
+  structure is the `I_IMAGECALLBACK` value (-1).
 
-The tree-view control sends [TVN_SETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo) notifications to inform your code that an event occurred that caused a change to a characteristic of a tree-view item. Typically the events are raised by the user's actions. The notification provides information about what characteristic was changed, and provides the new value.
+The tree-view control sends [TVN_SETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo)
+notifications to inform your code that an event occurred that caused a change to a characteristic
+of a tree-view item. Typically the events are raised by the user's actions. The notification provides
+information about what characteristic was changed, and provides the new value.
 
-The following are the contexts in which the tree-view control sends [TVN_SETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo):
-- If the `pszText` member of the item's The user edits the label of an item (if this functionality is enabled for the control). The `mask` member will have the `TVIF_FLAG` set.
-- An item's selected state has changed. If the item's selected state has changed from being selected to being not selected, the `mask` member will have the `TVIF_IMAGE` flag set. If the item's selected state has changed from being not selected to being selected, the `mask` member will have the `TVIF_SELECTEDIMAGE` flag set.
+The following are the contexts in which the tree-view control sends
+[TVN_SETDISPINFO](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo):
+- If the `pszText` member of the item's The user edits the label of an item (if this functionality
+  is enabled for the control). The `mask` member will have the `TVIF_FLAG` set.
+- An item's selected state has changed. If the item's selected state has changed from being selected
+  to being not selected, the `mask` member will have the `TVIF_IMAGE` flag set. If the item's selected
+  state has changed from being not selected to being selected, the `mask` member will have the
+  `TVIF_SELECTEDIMAGE` flag set.
 
 ## TreeViewEx_Node: Tested methods and properties
 
-The following is a list of methods and properties. The items with an "X" next to them have been tested. The items with no "X" have not been tested. Most of the methods and properties probably work, but only the marked items have been verified.
+The following is a list of methods and properties. The items with an "X" next to them have been tested.
+The items with no "X" have not been tested. Most of the methods and properties probably work, but
+only the marked items have been verified.
 
 ### TreeViewEx_Node: Static methods
 

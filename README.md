@@ -50,7 +50,25 @@ of creating a context menu. See file test\demo-context-menu.ahk for an example.
 
 # TreeViewEx
 
-`TreeViewEx` implements almost all of the TVM messages, and a number of additional methods. Most of the methods are currently undocumented, but for the most part you can find the needed information on [Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/controls/bumper-tree-view-control-reference-messages).
+`TreeViewEx` implements almost all of the TVM messages, and a number of additional methods. Most of
+the methods are currently undocumented, but for the most part you can find the needed information on
+[Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/controls/bumper-tree-view-control-reference-messages).
+
+To use the library `#include` [VENV.ahk](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/VENV.ahk).
+VENV.ahk packages all of the files together. To make the library available to any script, I recommend
+this setup:
+
+- Clone the repository
+- Make a copy of the cloned repository and work with the copy. This is to avoid a situation where
+  pulling an update breaks our scripts; by using a separate copy we can give ourselves time to review
+  updates before updating the active copy.
+- Add a file "TreeViewEx.ahk" to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement: `#include C:\users\you\path\to\AutoHotkey-TreeViewEx-Active\src\VENV.ahk`
+
+With this setup, we can use `#include <TreeViewEx>` from any other script. Also, when we want to test
+updates to the repository, we just need to go into that file and change the path to the VENV.ahk
+file in the git clone, then run our scripts that use `TreeViewEx` to check for errors. Then change
+the path back when done.
 
 # Dependencies
 
@@ -62,22 +80,28 @@ of creating a context menu. See file test\demo-context-menu.ahk for an example.
 
 # Demo
 
-See [the demo script](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/test/demo-NotificationHandlers.ahk) for a working example. The demo file will run as-is (but still requires the above dependencies). The demo script focuses on setting event handlers for TVN notifications. All nodes are added to the tree-view with `item.pszText = LPSTR_TEXTCALLBACK` and `item.cChildren = TVIF_CHILDREN`. The following notifications are handled in the demo:
-- [TVN_GETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo).
-- [TVN_BEGINLABELEDITW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-beginlabeledit)
+See [the demo script](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/test/demo-NotificationHandlers.ahk)
+for a working example. The demo file will run as-is (but still requires the above dependencies). The
+demo script focuses on setting event handlers for TVN notifications. All nodes are added to the
+tree-view with `item.pszText = LPSTR_TEXTCALLBACK` and `item.cChildren = TVIF_CHILDREN`. The following
+notifications are handled in the demo:
 - [TVN_BEGINLABELEDITW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-beginlabeledit)
 - [TVN_DELETEITEMW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-deleteitem)
-- [TVN_GETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo)
 - [TVN_ENDLABELEDITW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-endlabeledit)
+- [TVN_GETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getdispinfo)
+- [TVM_GETINFOTIPW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-getinfotip)
 - [TVN_ITEMCHANGEDW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemchanged)
 - [TVN_ITEMCHANGINGW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemchanging)
 - [TVN_ITEMEXPANDEDW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemexpanded)
 - [TVN_ITEMEXPANDINGW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemexpanding)
 - [TVN_SETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo)
+- [NM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/nm-click-tree-view)
 
 ## TreeViewEx: Tested methods and properties
 
-The following is a list of methods and properties. The items with an "X" next to them have been tested. The items with no "X" have not been tested. Most of the methods and properties probably work, but only the marked items have been verified.
+The following is a list of methods and properties. The items with an "X" next to them have been tested.
+The items with no "X" have not been tested. Most of the methods and properties probably work, but
+only the marked items have been verified.
 
 ### TreeViewEx: Static methods
 

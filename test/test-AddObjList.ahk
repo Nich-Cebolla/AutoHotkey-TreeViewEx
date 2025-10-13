@@ -40,7 +40,6 @@ class test_AddObjList {
         tvex1.AddObjList(list)
         tvex1.ExpandRecursive()
         tvex1.EnsureVisible()
-        tvex1.Redraw()
 
         rc := tvex1.GetRect()
         tvex2 := this.tvex2 := TreeViewEx(g, { Width: 300, Rows: 12 , Y: rc.B + g.MarginY })

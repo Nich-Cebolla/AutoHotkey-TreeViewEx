@@ -95,7 +95,7 @@ TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, d
             }
     }
     return DllCall(
-        g_proc_comctl32_DefSubclassProc
+        g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass
       , 'uint', uMsg
       , 'ptr', wParam

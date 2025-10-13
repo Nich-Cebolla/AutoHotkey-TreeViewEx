@@ -11,21 +11,22 @@ TreeViewEx_SetConstants(force := false) {
     if IsSet(tvex_flag_constants_set) && !force {
         return
     }
-    g_proc_comctl32_DefSubclassProc :=
-    g_proc_gdi32_CreateFontIndirectW :=
-    g_proc_gdi32_DeleteObject :=
-    g_proc_gdi32_GetObjectW :=
-    g_proc_msvcrt_memmove :=
-    g_proc_user32_CreateWindowExW :=
-    g_proc_user32_DestroyWindow :=
-    g_proc_user32_GetDpiForWindow :=
-    g_proc_user32_RedrawWindow :=
+    g_comctl32_DefSubclassProc :=
+    g_gdi32_CreateFontIndirectW :=
+    g_gdi32_DeleteObject :=
+    g_gdi32_GetObjectW :=
+    g_msvcrt_memmove :=
+    g_user32_CreateWindowExW :=
+    g_user32_DestroyWindow :=
+    g_user32_GetDpiForWindow :=
+    g_user32_RedrawWindow :=
+    g_user32_SetWindowPos :=
     0
 
     TreeViewEx.LibToken := LibraryManager(Map(
         'comctl32', [ 'DefSubclassProc' ]
       , 'msvcrt', [ 'memmove' ]
-      , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'GetDpiForWindow', 'RedrawWindow' ]
+      , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'GetDpiForWindow', 'RedrawWindow', 'SetWindowPos' ]
       , 'gdi32', [ 'CreateFontIndirectW', 'GetObjectW', 'DeleteObject' ]
     ))
 

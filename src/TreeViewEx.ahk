@@ -183,7 +183,7 @@ class TreeViewEx {
         }
         style := options.AddStyle ? options.Style | options.AddStyle : options.Style
         this.Hwnd := DllCall(
-            g_proc_user32_CreateWindowExW
+            g_user32_CreateWindowExW
           , 'uint', options.AddExStyle ? options.ExStyle | options.AddExStyle : options.ExStyle ; dwExStyle
           , 'ptr', TreeViewEx.ClassName                                                         ; lpClassName
           , 'ptr', windowName                                                                   ; lpWindowName
@@ -603,7 +603,7 @@ class TreeViewEx {
         this.Collection.Remove(Handle, &node)
         return node
     }
-    Destroy() => DllCall(g_proc_user32_DestroyWindow, 'ptr', this.Hwnd, 'int')
+    Destroy() => DllCall(g_user32_DestroyWindow, 'ptr', this.Hwnd, 'int')
     Dispose() {
         if this.GetCount() {
             this.SetRedraw(0)
@@ -1142,7 +1142,7 @@ class TreeViewEx {
      */
     Redraw(flags := RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN) {
         return DllCall(
-            g_proc_user32_RedrawWindow
+            g_user32_RedrawWindow
           , 'ptr', this.Hwnd
           , 'ptr', 0
           , 'ptr', 0

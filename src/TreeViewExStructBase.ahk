@@ -75,7 +75,7 @@ class TreeViewExStructBase {
             throw Error('The input buffer`'s size is insufficient.', -1, Buf.Size)
         }
         DllCall(
-            g_proc_msvcrt_memmove
+            g_msvcrt_memmove
           , 'ptr', Buf.Ptr + Offset
           , 'ptr', this.Ptr
           , 'int', this.Size

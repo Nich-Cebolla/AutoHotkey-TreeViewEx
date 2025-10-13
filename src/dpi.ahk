@@ -8,19 +8,19 @@ TreeViewEx_SetDpiConstants(force := false) {
     if IsSet(tvex_flag_dpiconstants_set) && !force {
         return
     }
-    g_proc_Shcore_GetDpiForMonitor :=
-    g_proc_Shcore_GetProcessDpiAwareness :=
-    g_proc_user32_AreDpiAwarenessContextsEqual :=
-    g_proc_user32_GetAwarenessFromDpiAwarenessContext :=
-    g_proc_user32_GetDpiAwarenessContextForProcess :=
-    g_proc_user32_GetDpiForSystem :=
-    g_proc_user32_GetDpiForWindow :=
-    g_proc_user32_GetDpiFromDpiAwarenessContext :=
-    g_proc_user32_GetSystemDpiForProcess :=
-    g_proc_user32_GetThreadDpiAwarenessContext :=
-    g_proc_user32_GetWindowDpiAwarenessContext :=
-    g_proc_user32_IsValidDpiAwarenessContext :=
-    g_proc_user32_SetThreadDpiAwarenessContext :=
+    g_Shcore_GetDpiForMonitor :=
+    g_Shcore_GetProcessDpiAwareness :=
+    g_user32_AreDpiAwarenessContextsEqual :=
+    g_user32_GetAwarenessFromDpiAwarenessContext :=
+    g_user32_GetDpiAwarenessContextForProcess :=
+    g_user32_GetDpiForSystem :=
+    g_user32_GetDpiForWindow :=
+    g_user32_GetDpiFromDpiAwarenessContext :=
+    g_user32_GetSystemDpiForProcess :=
+    g_user32_GetThreadDpiAwarenessContext :=
+    g_user32_GetWindowDpiAwarenessContext :=
+    g_user32_IsValidDpiAwarenessContext :=
+    g_user32_SetThreadDpiAwarenessContext :=
     0
 
     ; https://learn.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
@@ -95,7 +95,7 @@ TreeViewEx_SetDpiConstants(force := false) {
  * @returns {Boolean} - 1 if true, else 0.
  */
 TreeViewEx_AreDpiAwarenessContextsEqual(DpiContextA, DpiContextB?) {
-    return DllCall(g_proc_user32_AreDpiAwarenessContextsEqual, 'ptr', DpiContextA, 'ptr', DpiContextB ?? TreeViewEx_GetThreadDpiAwarenessContext(), 'int')
+    return DllCall(g_user32_AreDpiAwarenessContextsEqual, 'ptr', DpiContextA, 'ptr', DpiContextB ?? TreeViewEx_GetThreadDpiAwarenessContext(), 'int')
 }
 
 /**
@@ -108,7 +108,7 @@ TreeViewEx_AreDpiAwarenessContextsEqual(DpiContextA, DpiContextB?) {
  * @returns {Integer} - The DPI_AWARENESS value.
  */
 TreeViewEx_GetAwarenessFromDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
-    return DllCall(g_proc_user32_GetAwarenessFromDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'int')
+    return DllCall(g_user32_GetAwarenessFromDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'int')
 }
 
 /**
@@ -119,7 +119,7 @@ TreeViewEx_GetAwarenessFromDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
  * @returns {Integer} - The DPI_AWARENESS_CONTEXT for the specified process.
  */
 TreeViewEx_GetDpiAwarenessContextForProcess(hProcess := 0) {
-    return DllCall(g_proc_user32_GetDpiAwarenessContextForProcess, 'ptr', hProcess, 'ptr')
+    return DllCall(g_user32_GetDpiAwarenessContextForProcess, 'ptr', hProcess, 'ptr')
 }
 
 /**
@@ -139,7 +139,7 @@ TreeViewEx_GetDpiAwarenessContextForProcess(hProcess := 0) {
  * An unsuccessful function call would be caused by an invalid parameter.
  */
 TreeViewEx_GetDpiForMonitor(hMonitor, DpiType := MDT_DEFAULT) {
-    if !DllCall(g_proc_Shcore_GetDpiForMonitor, 'ptr', hMonitor, 'ptr', DpiType, 'uint*', &DpiX := 0, 'uint*', &DpiY := 0, 'int') {
+    if !DllCall(g_Shcore_GetDpiForMonitor, 'ptr', hMonitor, 'ptr', DpiType, 'uint*', &DpiX := 0, 'uint*', &DpiY := 0, 'int') {
         return DpiX
     }
 }
@@ -154,7 +154,7 @@ TreeViewEx_GetDpiForMonitor(hMonitor, DpiType := MDT_DEFAULT) {
  * @returns {Integer} - The system DPI value.
  */
 TreeViewEx_GetDpiForSystem() {
-    return DllCall(g_proc_user32_GetDpiForSystem, 'uint')
+    return DllCall(g_user32_GetDpiForSystem, 'uint')
 }
 
 /**
@@ -167,7 +167,7 @@ TreeViewEx_GetDpiForSystem() {
  * - DPI_AWARENESS_PER_MONITOR_AWARE - The DPI of the monitor where the window is located.
  */
 TreeViewEx_GetDpiForWindow(Hwnd) {
-    return DllCall(g_proc_user32_GetDpiForWindow, 'ptr', Hwnd, 'uint')
+    return DllCall(g_user32_GetDpiForWindow, 'ptr', Hwnd, 'uint')
 }
 
 /**
@@ -181,7 +181,7 @@ TreeViewEx_GetDpiForWindow(Hwnd) {
  * @returns {Integer} - The dpi value.
  */
 TreeViewEx_GetDpiFromDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
-    return DllCall(g_proc_user32_GetDpiFromDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'uint')
+    return DllCall(g_user32_GetDpiFromDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'uint')
 }
 
 /**
@@ -195,7 +195,7 @@ TreeViewEx_GetDpiFromDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
  * - E_ACCESSDENIED - The application does not have sufficient privileges.
  */
 TreeViewEx_GetProcessDpiAwareness(&OutValue, hProcess := 0) {
-    return DllCall(g_proc_Shcore_GetProcessDpiAwareness, 'ptr', hProcess, 'int*', &OutValue := 0, 'int')
+    return DllCall(g_Shcore_GetProcessDpiAwareness, 'ptr', hProcess, 'int*', &OutValue := 0, 'int')
 }
 
 /**
@@ -210,7 +210,7 @@ TreeViewEx_GetProcessDpiAwareness(&OutValue, hProcess := 0) {
  * @returns {Integer} - The dpi value.
  */
 TreeViewEx_GetSystemDpiForProcess(hProcess := 0) {
-    return DllCall(g_proc_user32_GetSystemDpiForProcess, 'ptr', hProcess, 'uint')
+    return DllCall(g_user32_GetSystemDpiForProcess, 'ptr', hProcess, 'uint')
 }
 
 /**
@@ -221,7 +221,7 @@ TreeViewEx_GetSystemDpiForProcess(hProcess := 0) {
  * @returns {Integer} -  The thread's DPI_AWARENESS_CONTEXT.
  */
 TreeViewEx_GetThreadDpiAwarenessContext() {
-    return DllCall(g_proc_user32_GetThreadDpiAwarenessContext, 'ptr')
+    return DllCall(g_user32_GetThreadDpiAwarenessContext, 'ptr')
 }
 
 /**
@@ -233,7 +233,7 @@ TreeViewEx_GetThreadDpiAwarenessContext() {
  * @returns {Integer} - The window's DPI_AWARENESS_CONTEXT.
  */
 TreeViewEx_GetWindowDpiAwarenessContext(Hwnd) {
-    return DllCall(g_proc_user32_GetWindowDpiAwarenessContext, 'ptr', Hwnd, 'ptr')
+    return DllCall(g_user32_GetWindowDpiAwarenessContext, 'ptr', Hwnd, 'ptr')
 }
 
 /**
@@ -247,7 +247,7 @@ TreeViewEx_GetWindowDpiAwarenessContext(Hwnd) {
  * @returns {Boolean} - 1 if valid, else 0.
  */
 TreeViewEx_IsValidDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
-    return DllCall(g_proc_user32_IsValidDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'int')
+    return DllCall(g_user32_IsValidDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'int')
 }
 
 /**
@@ -264,6 +264,6 @@ TreeViewEx_IsValidDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
  */
 TreeViewEx_SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT := DPI_AWARENESS_CONTEXT_DEFAULT ?? -4) {
     if TreeViewEx_IsValidDpiAwarenessContext(DPI_AWARENESS_CONTEXT) {
-        return DllCall(g_proc_user32_SetThreadDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'ptr')
+        return DllCall(g_user32_SetThreadDpiAwarenessContext, 'ptr', DPI_AWARENESS_CONTEXT, 'ptr')
     }
 }

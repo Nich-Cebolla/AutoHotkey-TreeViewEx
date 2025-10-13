@@ -101,10 +101,10 @@ class TreeViewEx_LogFont extends TreeViewExStructBase {
     Apply(Redraw := true) {
         hFontOld := SendMessage(WM_GETFONT,,, this.Hwnd)
         Flag := this.Handle = hFontOld
-        this.Handle := DllCall(g_proc_gdi32_CreateFontIndirectW, 'ptr', this, 'ptr')
+        this.Handle := DllCall(g_gdi32_CreateFontIndirectW, 'ptr', this, 'ptr')
         SendMessage(WM_SETFONT, this.Handle, Redraw, this.Hwnd)
         if Flag {
-            DllCall(g_proc_gdi32_DeleteObject, 'ptr', hFontOld, 'int')
+            DllCall(g_gdi32_DeleteObject, 'ptr', hFontOld, 'int')
         }
     }
     /**
@@ -114,7 +114,7 @@ class TreeViewEx_LogFont extends TreeViewExStructBase {
      */
     Call(*) {
         hFont := SendMessage(WM_GETFONT,,, this.Hwnd)
-        if !DllCall(g_proc_gdi32_GetObjectW, 'ptr', hFont, 'int', this.Size, 'ptr', this, 'uint') {
+        if !DllCall(g_gdi32_GetObjectW, 'ptr', hFont, 'int', this.Size, 'ptr', this, 'uint') {
             throw OSError()
         }
     }
@@ -124,7 +124,7 @@ class TreeViewEx_LogFont extends TreeViewExStructBase {
      */
     Dispose() {
         if this.Handle {
-            DllCall(g_proc_gdi32_DeleteObject, 'ptr', this.Handle)
+            DllCall(g_gdi32_DeleteObject, 'ptr', this.Handle)
             this.Handle := 0
         }
     }
@@ -139,7 +139,7 @@ class TreeViewEx_LogFont extends TreeViewExStructBase {
     }
     __Delete() {
         if this.Handle {
-            DllCall(g_proc_gdi32_DeleteObject, 'ptr', this.Handle)
+            DllCall(g_gdi32_DeleteObject, 'ptr', this.Handle)
             this.Handle := 0
         }
     }
@@ -166,7 +166,7 @@ class TreeViewEx_LogFont extends TreeViewExStructBase {
      * @memberof Logfont
      * @instance
      */
-    Dpi => this.Hwnd ? DllCall(g_proc_user32_GetDpiForWindow, 'Ptr', this.Hwnd, 'UInt') : ''
+    Dpi => this.Hwnd ? DllCall(g_user32_GetDpiForWindow, 'Ptr', this.Hwnd, 'UInt') : ''
     /**
      * Gets or sets the escapement measured in tenths of a degree.
      * @memberof Logfont

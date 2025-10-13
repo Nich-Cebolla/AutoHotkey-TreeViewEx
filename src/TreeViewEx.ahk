@@ -130,6 +130,9 @@ class TreeViewEx {
      * In the context of a tree-view control, `hMenu` is a child-window identifier. Generally this
      * should be left the default ( 0 ).
      *
+     * @param {String} [Options.Name] - A name to associate with the TreeViewEx control. The
+     * value is set to property {@link TreeViewEx#Name}.
+     *
      * @param {Integer} [Options.Param = 0] - The value to pass to the `lpParam` parameter of CreateWindowExW.
      * Generally this should be left the default ( 0 ).
      *
@@ -172,7 +175,6 @@ class TreeViewEx {
         options := TreeViewEx.Options(Options ?? unset)
         this.HwndGui := GuiObj.Hwnd
         rc := WinRect(GuiObj.Hwnd, 1)
-        rc.ToClient(GuiObj.Hwnd, true)
         if IsNumber(options.WindowName) {
             windowName := options.WindowName
         } else {
@@ -186,7 +188,7 @@ class TreeViewEx {
           , 'ptr', TreeViewEx.ClassName                                                         ; lpClassName
           , 'ptr', windowName                                                                   ; lpWindowName
           , 'uint', style                                                                       ; dwStyle
-          , 'int', rc.L + (IsNumber(options.X) ? options.X : GuiObj.MarginX)                    ; x
+          , 'int', rc.L + (IsNumber(options.X) ? options.X : GuiObj.MarginX)                    ; X
           , 'int', rc.T + (IsNumber(options.Y) ? options.Y : GuiObj.MarginY)                    ; Y
           , 'int', options.Width                                                                ; nWidth
           , 'int', IsNumber(options.Height) ? options.Height : 1                                ; nHeight
@@ -196,6 +198,8 @@ class TreeViewEx {
           , 'ptr', options.Param                                                                ; lpParam
         )
         TreeViewEx.Add(this)
+
+        this.Name := options.Name
 
         if options.BkColor {
             this.SetBkColor(options.BkColor)
@@ -229,7 +233,8 @@ class TreeViewEx {
         }
 
         if options.Rows || !IsNumber(options.Height) {
-            WinMove(, , , (options.Rows || 1) * this.GetItemHeight() + (style & WS_BORDER ? 2 : 0), this.Hwnd)
+            this.GetPos(&x, &y, &w, &h)
+            WinMove(x, y, w, (options.Rows || 1) * this.GetItemHeight() + (style & WS_BORDER ? 2 : 0), this.Hwnd)
         }
     }
     /**
@@ -1593,6 +1598,7 @@ class TreeViewEx {
               , ItemHeight: ''
               , LineColor: ''
               , Menu: 0
+              , Name: ''
               , Param: 0
               , Rows: ''
               , ScrollTime: ''

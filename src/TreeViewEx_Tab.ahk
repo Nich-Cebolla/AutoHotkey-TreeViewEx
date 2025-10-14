@@ -91,7 +91,7 @@ class TreeViewEx_Tab {
             tvexOptions.Y := rc.T + g.MarginY
         }
         tvex := TreeViewEx(g, tvexOptions)
-        item := TreeViewEx_Tab.Item(tvex, tab, tabValue, options.Autosize, options.FitTab)
+        item := TreeViewEx_Tab.Item(tvex, tab, tabValue, options.Autosize)
         if tabValue = tab.Value {
             this.ActiveControls.Push(item)
             if !DllCall(
@@ -99,7 +99,7 @@ class TreeViewEx_Tab {
               , 'ptr', tvex.Hwnd
               , 'ptr', tab.Hwnd
               , 'int', 0, 'int', 0, 'int', 0, 'int', 0
-              , 'uint', SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOCOPYBITS
+              , 'uint', SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
               , 'int'
             ) {
                 throw OSError()
@@ -107,7 +107,7 @@ class TreeViewEx_Tab {
             tvex.Redraw()
         } else {
             for item in this.ActiveControls {
-                item.tvex.Redraw()
+                item.Enable()
             }
         }
         this.Collection.Insert(item)
@@ -119,6 +119,16 @@ class TreeViewEx_Tab {
         }
         return tvex
     }
+    /**
+     * Deletes a tab and any {@link TreeViewEx} controls associated with it.
+     * @param {Integer|String} Value - Either the string name of the tab, or the integer tab index
+     * (1-based) of the tab.
+     * @param {Boolean} [ValueIsName = true] - If true, `Value` is the name. If false, `Value` is
+     * the index.
+     * @param {Boolean} [CaseSense = true] - If true, and if `ValueIsName` is true, case sensitivity
+     * is used when using the name to get the tab index. If false, case sensitivity is not used.
+     * If `ValueIsName` is false, `CaseSense` is ignored.
+     */
     DeleteTab(Value, ValueIsName := true, CaseSense := true) {
         tab := this.Tab
         if ValueIsName {
@@ -154,6 +164,12 @@ class TreeViewEx_Tab {
         tab.Delete(Value)
         TreeViewEx_Tab_OnChange(tab)
     }
+    /**
+     * Deletes a {@link TreeViewEx} control but does not delete the tab it is associated with.
+     * @param {String} TvexName - The name of the control.
+     * @returns {TreeViewEx_Tab.Item} - The deleted item. The control is on property
+     * {@link TreeViewEx_Tab.Item#tvex}.
+     */
     DeleteTreeViewEx(TvexName) {
         this.Collection.Remove(TvexName, &item)
         item.tvex.Dispose()
@@ -165,7 +181,7 @@ class TreeViewEx_Tab {
                 for _item in active {
                     if item == _item {
                         active.RemoveAt(A_Index)
-                        return
+                        return item
                     }
                 }
             }
@@ -185,6 +201,83 @@ class TreeViewEx_Tab {
     Gui => GuiFromHwnd(this.HwndGui)
     Name => this.Tab.Name
 
+    class AddOptions {
+        static Default := {
+            Autosize: true
+          , CreateTab: true
+          , FitTab: true
+          , SetContextMenu: true
+          , UseTab: ''
+          , UseTabCaseSense: true
+        }
+        static Call(Options?) {
+            if IsSet(Options) {
+                o := {}
+                d := this.Default
+                for prop in d.OwnProps() {
+                    o.%prop% := HasProp(Options, prop) ? Options.%prop% : d.%prop%
+                }
+            } else {
+                o := this.Default.Clone()
+            }
+            return o
+        }
+    }
+    class Item {
+        __New(tvex, tab, tabValue, autosize) {
+            this.tvex := tvex
+            this.tabValue := tabValue
+            this.HwndTab := tab.Hwnd
+            this.SetAutosize(autosize)
+        }
+        Disable() {
+            this.tvex.Enabled := this.tvex.Visible := 0
+        }
+        Enable(rc?) {
+            if !IsSet(rc) {
+                rc := this.Tab.GetClientDisplayRect()
+            }
+            tvex := this.tvex
+            if this.autosize {
+                ; If autosize is true, ensure the control's position is consistent relative to the tab's borders.
+                diff := this.diff
+                WinMove(rc.L + diff.L, rc.T + diff.T, rc.W + diff.W, rc.H + diff.H, tvex.Hwnd)
+            }
+            ; Display the control
+            tvex.Enabled := 1
+            if !DllCall(
+                g_user32_SetWindowPos
+              , 'ptr', tvex.Hwnd
+              , 'ptr', this.HwndTab
+              , 'int', 0, 'int', 0, 'int', 0, 'int', 0
+              , 'uint', SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+              , 'int'
+            ) {
+                throw OSError()
+            }
+            tvex.Redraw()
+        }
+        SetAutosize(Value) {
+            if this.__autosize := Value {
+                tvex := this.tvex
+                tvex.GetPos(&x, &y, &w, &h)
+                rc := this.Tab.GetClientDisplayRect()
+                this.diff := {
+                    L: x - rc.L
+                  , T: y - rc.T
+                  , W: w - rc.W
+                  , H: h - rc.H
+                }
+            } else {
+                this.diff := ''
+            }
+        }
+        Autosize {
+            Get => this.__autosize
+            Set => this.SetAutosize(Value)
+        }
+        Tab => GuiCtrlFromHwnd(this.HwndTab)
+    }
     class Options {
         static Default := {
             Opt: 'w100 h100'
@@ -208,58 +301,6 @@ class TreeViewEx_Tab {
             return o
         }
     }
-    class AddOptions {
-        static Default := {
-            Autosize: true
-          , CreateTab: true
-          , FitTab: true
-          , SetContextMenu: true
-          , UseTab: ''
-          , UseTabCaseSense: true
-        }
-        static Call(Options?) {
-            if IsSet(Options) {
-                o := {}
-                d := this.Default
-                for prop in d.OwnProps() {
-                    o.%prop% := HasProp(Options, prop) ? Options.%prop% : d.%prop%
-                }
-            } else {
-                o := this.Default.Clone()
-            }
-            return o
-        }
-    }
-
-    class Item {
-        __New(tvex, tab, tabValue, fitTab, autosize) {
-            this.tvex := tvex
-            this.tabValue := tabValue
-            this.HwndTab := tab.Hwnd
-            this.fitTab := fitTab
-            this.SetAutosize(autosize)
-        }
-        SetAutosize(Value) {
-            if this.__autosize := Value {
-                tvex := this.tvex
-                tvex.GetPos(&x, &y, &w, &h)
-                rc := this.Tab.GetClientDisplayRect()
-                this.diff := {
-                    L: x - rc.L
-                  , T: y - rc.T
-                  , W: w - rc.W
-                  , H: h - rc.H
-                }
-            } else {
-                this.diff := ''
-            }
-        }
-        Autosize {
-            Get => this.__autosize
-            Set => this.SetAutosize(Value)
-        }
-        Tab => GuiCtrlFromHwnd(this.HwndTab)
-    }
 }
 
 TreeViewEx_Tab_CallbackValue_Name(value) {
@@ -268,7 +309,7 @@ TreeViewEx_Tab_CallbackValue_Name(value) {
 TreeViewEx_Tab_OnChange(tab, *) {
     tvexTab := tab.tvexTab
     for item in tvexTab.ActiveControls {
-        item.tvex.Enabled := item.tvex.Visible := 0
+        item.Disable()
     }
     n := tab.Value
     list := tvexTab.ActiveControls
@@ -284,24 +325,6 @@ TreeViewEx_Tab_OnChange(tab, *) {
     rc := tab.GetClientDisplayRect()
     g := tab.Gui
     for item in list {
-        tvex := item.tvex
-        if item.autosize {
-            ; If autosize is true, ensure the control's position is consistent relative to the tab's borders.
-            diff := item.diff
-            WinMove(rc.L + diff.L, rc.T + diff.T, rc.W + diff.W, rc.H + diff.H, tvex.Hwnd)
-        }
-        ; Display the control
-        tvex.Enabled := 1
-        if !DllCall(
-            g_user32_SetWindowPos
-          , 'ptr', tvex.Hwnd
-          , 'ptr', tab.Hwnd
-          , 'int', 0, 'int', 0, 'int', 0, 'int', 0
-          , 'uint', SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOCOPYBITS
-          , 'int'
-        ) {
-            throw OSError()
-        }
-        tvex.Redraw()
+        item.Enable(rc)
     }
 }

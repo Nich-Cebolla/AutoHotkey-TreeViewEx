@@ -9,7 +9,8 @@ class test_TreeViewEx_Tab {
     static Call() {
         g := this.g := Gui('+Resize', , test_TreeViewEx_Tab_EventHandler())
         tvexTab := this.tvexTab := TreeViewEx_Tab(g, { opt: 'w400 r15', name: 'tab' })
-        tvex := this.tvex := tvexTab.Add('tvex1')
+        item := this.item := tvexTab.Add('tvex1')
+        tvex := item.tvex
         obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, '-tvex1')
         tvex.AddObj(obj)
         rc := tvexTab.Tab.GetClientWindowRect()
@@ -61,7 +62,8 @@ class test_TreeViewEx_Tab_EventHandler {
             }
             name := 'tvex' i
         }
-        tvex := test_TreeViewEx_Tab.tvexTab.Add(name)
+        item := test_TreeViewEx_Tab.tvexTab.Add(name)
+        tvex := item.tvex
         obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, '-' name)
         tvex.AddObj(obj)
     }

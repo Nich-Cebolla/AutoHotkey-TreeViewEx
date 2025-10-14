@@ -1035,6 +1035,9 @@ class TreeViewEx {
             throw OSError()
         }
     }
+    Hide() {
+        this.Enabled := this.Visible := 0
+    }
     /**
      * If one or both of `X` and `Y` are unset, the mouse's position is used.
      * @param {Integer} [X] - The X-coordinate relative to the TreeView control (client coordinate).
@@ -1263,6 +1266,9 @@ class TreeViewEx {
     SetScrollTime(TimeMs) => SendMessage(TVM_SETSCROLLTIME, TimeMs, 0, this.Hwnd)
     SetTextColor(Color) => SendMessage(TVM_SETTEXTCOLOR, 0, Color, this.Hwnd)
     SetTooltips(Handle) => SendMessage(TVM_SETTOOLTIPS, Handle, 0, this.Hwnd)
+    Show() {
+        this.Enabled := this.Visible := 1
+    }
     ShowInfoTip(Handle) => SendMessage(TVM_SHOWINFOTIP, 0, Handle, this.Hwnd)
     SortChildren(Handle, Recursive := true) => SendMessage(TVM_SORTCHILDREN, Recursive, Handle, this.Hwnd)
     /**

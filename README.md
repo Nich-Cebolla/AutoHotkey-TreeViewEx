@@ -119,8 +119,59 @@ notifications are handled in the demo:
 
 TreeViewEx_Tab.ahk is a separate script (not included in VENV.ahk) containing class `TreeViewEx_Tab`.
 `TreeViewEx_Tab` has one dependency, [TabEx.ahk](https://github.com/Nich-Cebolla/AutoHotkey-TabEx).
-`TreeViewEx_Tab` creates a tab control that is intended to display one `TreeViewEx` control per
-tab. It simplifies the process of adding
+`TreeViewEx_Tab` creates a tab control in a gui window and makes it easy to associate new `TreeViewEx`
+controls with an individual tab so the user can change what information is displayed by selecting
+a new tab.
+
+For the developer, `TreeViewEx_Tab` handles all of the legwork around adding, positioning, displaying,
+and removing `TreeViewEx` controls and the tabs they are associated with. These are the general steps
+for using the class:
+
+1. Prepare [TabEx.ahk](https://github.com/Nich-Cebolla/AutoHotkey-TabEx) in the same way as described
+  [above](#treeviewex).
+2. Add a file TreeViewEx_Tab.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement.
+    ```ahk
+    #include C:\users\you\path\to\AutoHotkey-TreeViewEx-Active\src\TreeViewEx_Tab.ahk
+    ```
+3. In your script that will use `TreeViewEx_Tab`, include:
+    ```ahk
+    #include <TreeViewEx_Tab>
+    ```
+4. (Optional) Create a context menu class using [MenuEx](#related-libraries).
+5. (Optional) Define a function that all new `TreeViewEx` controls will be passed to to use
+   custom instantiation logic.
+6. Define 0-3 options objects, each associated with a parameter of `TreeViewEx_Tab.Prototype.__New`.
+    ```ahk
+    __New(GuiObj, Options?, DefaultAddOptions := '', DefaultTreeViewExOptions := '')
+    ```
+    None of the options are strictly necessary, but generally you'll want to create the `Options` object
+    to specify the tab control's options, and optionally supply the objects described by steps 4 and 5
+    above. The other two, `DefaultAddOptions` and `DefaultTreeViewExOptions`, can be left the default
+    for general use.
+    - `Options` - The options for `TreeViewEx_Tab` and the tab control it will create. These are described
+    in the parameter hint above `TreeViewEx_Tab.Prototype.__New`.
+    - `DefaultAddOptions` - The default options that will be used when adding a `TreeViewEx` control
+    via `TreeViewEx_Tab.Prototype.Add`. These are described in the parameter hint above
+    `TreeViewEx_Tab.Prototype.Add`.
+    - `DefaultTreeViewExOptions` - The default options that will be used when adding a `TreeViewEx`
+    control via `TreeViewEx_Tab.Prototype.Add`. These are described in the parameter hint above
+    `TreeViewEx.Prototype.__New`.
+7. Create the object
+    ```ahk
+    options := { opt: 'w400 r15', name: 'tab' } ; no context menu or instantiation callback seen here
+    tvexTab := TreeViewEx_Tab(GuiObj, options) ; assume GuiObj reference a Gui object
+    ```
+8. Add `TreeViewEx` controls to the tab control by supplying a name. If using the default add options,
+   calling `TreeViewEx_Tab.Prototype.Add` with just a name will:
+  - Create a new tab using the name.
+  - Create a new `TreeViewEx` control positioned neatly in the center of the tab control's client area.
+    The control is associated with the newly created tab. This does not automatically display the tab
+    (unless its the first tab).
+  - Return a `TreeViewEx_Tab.Item` object. The `TreeViewEx` control is set to property "tvex".
+
+See the test file test\test-TreeViewEx_Tab.ahk for a working demo.
+
 
 ## TreeViewEx: Tested methods and properties
 

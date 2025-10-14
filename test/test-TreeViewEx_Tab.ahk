@@ -11,7 +11,7 @@ class test_TreeViewEx_Tab {
         tvexTab := this.tvexTab := TreeViewEx_Tab(g, { opt: 'w400 r15', name: 'tab' })
         item := this.item := tvexTab.Add('tvex1')
         tvex := item.tvex
-        obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, '-tvex1')
+        obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, 'tvex1')
         tvex.AddObj(obj)
         rc := tvexTab.Tab.GetClientWindowRect()
         tvexTab.Tab.UseTab()
@@ -64,7 +64,7 @@ class test_TreeViewEx_Tab_EventHandler {
         }
         item := test_TreeViewEx_Tab.tvexTab.Add(name)
         tvex := item.tvex
-        obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, '-' name)
+        obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, name)
         tvex.AddObj(obj)
     }
     DeleteTab(*) {
@@ -91,14 +91,13 @@ class test_TreeViewEx_Tab_EventHandler {
         name := test_TreeViewEx_Tab.tvexTab.Tab.Text
         item := test_TreeViewEx_Tab.tvexTab.Collection.GetValue(name)
         tvex := item.tvex
-        tvex.Enabled := tvex.Visible := 0
-        tvex.Redraw()
+        tvex.Hide()
     }
     Show(*) {
         name := test_TreeViewEx_Tab.tvexTab.Tab.Text
         item := test_TreeViewEx_Tab.tvexTab.Collection.GetValue(name)
         tvex := item.tvex
-        tvex.Enabled := tvex.Visible := 1
+        tvex.Show()
         tvex.Redraw()
     }
 }
@@ -115,7 +114,7 @@ test_TreeViewEx_Tab_ObjDeepClone(Self, n, ConstructorParams?, Depth := 0) {
         for Prop in Subject.OwnProps() {
             Desc := Subject.GetOwnPropDesc(Prop)
             if Desc.HasOwnProp('Value') {
-                Target.DefineProp(Prop, { Value: IsObject(Desc.Value) ? _ProcessValue(Desc.Value) : RegExReplace(Desc.Value, '\d+', n, , 1) })
+                Target.DefineProp(Prop, { Value: IsObject(Desc.Value) ? _ProcessValue(Desc.Value) : StrReplace(Desc.Value, 'obj1', n, , , 1) })
             } else {
                 Target.DefineProp(Prop, Desc)
             }
@@ -124,7 +123,7 @@ test_TreeViewEx_Tab_ObjDeepClone(Self, n, ConstructorParams?, Depth := 0) {
             Target.Length := Subject.Length
             for item in Subject {
                 if IsSet(item) {
-                    Target[A_Index] := IsObject(item) ? _ProcessValue(item) : item
+                    Target[A_Index] := IsObject(item) ? _ProcessValue(item) : StrReplace(item, 'obj1', n, , , 1)
                 }
             }
         } else if Target is Map {

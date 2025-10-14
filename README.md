@@ -115,6 +115,13 @@ notifications are handled in the demo:
 - [TVN_SETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo)
 - [NM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/nm-click-tree-view)
 
+# TreeViewEx_Tab.ahk
+
+TreeViewEx_Tab.ahk is a separate script (not included in VENV.ahk) containing class `TreeViewEx_Tab`.
+`TreeViewEx_Tab` has one dependency, [TabEx.ahk](https://github.com/Nich-Cebolla/AutoHotkey-TabEx).
+`TreeViewEx_Tab` creates a tab control that is intended to display one `TreeViewEx` control per
+tab. It simplifies the process of adding
+
 ## TreeViewEx: Tested methods and properties
 
 The following is a list of methods and properties. The items with an "X" next to them have been tested.
@@ -228,6 +235,7 @@ None.
 |  DoubleBuffer             |             |
 |  DrawImageAsync           |             |
 |  EditLabels               |             |
+|  Enabled                  |      X      |
 |  ExclusionCheckboxes      |             |
 |  FadeInOutExpandos        |             |
 |  FullRowselect            |             |
@@ -258,6 +266,7 @@ None.
 |  ShowSelAlways            |             |
 |  SingleExpand             |             |
 |  TrackSelect              |             |
+|  Visible                  |      X      |
 
 ## TreeViewEx - Tested notification handlers
 

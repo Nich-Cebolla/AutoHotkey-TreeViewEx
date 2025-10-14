@@ -620,6 +620,9 @@ class TreeViewEx {
             OnExit(this.CallbackOnExit, 0)
             this.DeleteProp('CallbackOnExit')
         }
+        if WinExist(this.Hwnd) {
+            this.Destroy()
+        }
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-editlabel}.
@@ -1140,7 +1143,8 @@ class TreeViewEx {
      * Zero or a combination of the flags lsited in the
      * {@link https://learn.microsoft.com/en-us/windows/win32/api/Winuser/nf-winuser-redrawwindow documentation}.
      */
-    Redraw(flags := RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN) {
+    Redraw(flags := RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN) {
+        Sleep(-1)
         return DllCall(
             g_user32_RedrawWindow
           , 'ptr', this.Hwnd
@@ -1366,6 +1370,10 @@ class TreeViewEx {
             }
         }
     }
+    Enabled {
+        Get => DllCall(g_user32_IsWindowEnabled, 'ptr', this.Hwnd, 'int')
+        Set => DllCall(g_user32_EnableWindow, 'ptr', this.Hwnd, 'int', Value ? 1 : 0, 'int')
+    }
     ExclusionCheckboxes {
         Get => SendMessage(TVM_GETEXTENDEDSTYLE, 0, 0, this.Hwnd) & TVS_EX_EXCLUSIONCHECKBOXES
         Set {
@@ -1575,6 +1583,10 @@ class TreeViewEx {
                 WinSetStyle('-' TVS_TRACKSELECT, this.Hwnd)
             }
         }
+    }
+    Visible {
+        Get => DllCall(g_user32_IsWindowVisible, 'ptr', this.Hwnd, 'int')
+        Set => DllCall(g_user32_ShowWindow, 'ptr', this.Hwnd, 'int', Value ? 4 : 0, 'int')
     }
 
     class Options {

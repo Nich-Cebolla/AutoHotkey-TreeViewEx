@@ -18,15 +18,19 @@ TreeViewEx_SetConstants(force := false) {
     g_msvcrt_memmove :=
     g_user32_CreateWindowExW :=
     g_user32_DestroyWindow :=
+    g_user32_EnableWindow :=
     g_user32_GetDpiForWindow :=
+    g_user32_IsWindowEnabled :=
+    g_user32_IsWindowVisible :=
     g_user32_RedrawWindow :=
     g_user32_SetWindowPos :=
+    g_user32_ShowWindow :=
     0
 
     TreeViewEx.LibToken := LibraryManager(Map(
         'comctl32', [ 'DefSubclassProc' ]
       , 'msvcrt', [ 'memmove' ]
-      , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'GetDpiForWindow', 'RedrawWindow', 'SetWindowPos' ]
+      , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'EnableWindow', 'GetDpiForWindow', 'IsWindowEnabled', 'IsWindowVisible', 'RedrawWindow', 'SetWindowPos', 'ShowWindow' ]
       , 'gdi32', [ 'CreateFontIndirectW', 'GetObjectW', 'DeleteObject' ]
     ))
 
@@ -288,6 +292,23 @@ TreeViewEx_SetConstants(force := false) {
     ; https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setlinecolor
 	CLR_NONE                                    := 0xFFFFFFFF
 	CLR_DEFAULT                                 := 0xFF000000
+
+    SWP_NONE                                    := 0x0000
+    SWP_NOSIZE                                  := 0x0001
+    SWP_NOMOVE                                  := 0x0002
+    SWP_NOZORDER                                := 0x0004
+    SWP_NOREDRAW                                := 0x0008
+    SWP_NOACTIVATE                              := 0x0010
+    SWP_FRAMECHANGED                            := 0x0020
+    SWP_SHOWWINDOW                              := 0x0040
+    SWP_HIDEWINDOW                              := 0x0080
+    SWP_NOCOPYBITS                              := 0x0100
+    SWP_NOOWNERZORDER                           := 0x0200
+    SWP_NOSENDCHANGING                          := 0x0400
+    SWP_DEFERERASE                              := 0x2000
+    SWP_ASYNCWINDOWPOS                          := 0x4000
+    SWP_DRAWFRAME                               := SWP_FRAMECHANGED
+    SWP_NOREPOSITION                            := SWP_NOOWNERZORDER
 
     ; https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
 	WS_BORDER                                   := 0x00800000

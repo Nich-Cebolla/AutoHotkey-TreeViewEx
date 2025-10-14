@@ -241,6 +241,7 @@ None.
 |  GetTextColor            |             |
 |  GetTooltips             |             |
 |  GetVisibleCount         |             |
+|  Hide                    |      X      |
 |  HasChildren             |      X      |
 |  HitTest                 |             |
 |  Insert                  |      X      |
@@ -267,6 +268,7 @@ None.
 |  SetScrollTime           |             |
 |  SetTextColor            |             |
 |  SetTooltips             |             |
+|  Show                    |      X      |
 |  ShowInfoTip             |             |
 |  SortChildren            |             |
 |  SortChildrenCb          |             |

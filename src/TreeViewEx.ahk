@@ -1247,7 +1247,6 @@ class TreeViewEx {
           , __Class: NodeClass.Prototype.__Class
         }
         ObjSetBase(this.Constructor.Prototype, NodeClass.Prototype)
-        this.Constructor.Prototype.DefineProp('Ctrl', { Get: TreeViewEx_GetTreeViewExCtrl })
         this.Collection := TreeViewExCollection_Node()
     }
     /**

@@ -107,7 +107,7 @@ class TreeViewEx_Node {
     OnDeleteItem(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
-    OnEndLabelEdit(Value, Struct) {
+    OnEndLabelEdit(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
     OnGetInfoChildren(Struct) {
@@ -131,19 +131,19 @@ class TreeViewEx_Node {
     OnItemChanging(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
-    OnItemExpanded(Value, Struct) {
+    OnItemExpanded(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
-    OnItemExpanding(Value, Struct) {
+    OnItemExpanding(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
-    OnSetInfoImage(Value, Struct) {
+    OnSetInfoImage(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
-    OnSetInfoName(Value, Struct) {
+    OnSetInfoName(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
-    OnSetInfoSelectedImage(Value, Struct) {
+    OnSetInfoSelectedImage(Struct) {
         TreeViewEx_ThrowOverrideMethodError(A_ThisFunc)
     }
     OnSingleExpand(Struct) {
@@ -151,6 +151,7 @@ class TreeViewEx_Node {
     }
 
     Child => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, this.Handle, this.HwndCtrl)
+    Ctrl => TreeViewEx.Get(this.HwndCtrl)
     Gui => GuiFromHwnd(this.HwndCtrl).Gui
     IsExpanded => this.Ctrl.IsExpanded(this.Handle)
     HasChildren => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, this.Handle, this.HwndCtrl) ? 1 : 0

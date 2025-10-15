@@ -65,6 +65,7 @@ class TreeViewEx_Tab {
         this.Tab.TvexTab := this
         ObjRelease(ObjPtr(this))
         this.Tab.OnEvent('Change', TreeViewEx_Tab_OnChange)
+        this.Tab.UseTab()
         this.ActiveControls := []
     }
     /**

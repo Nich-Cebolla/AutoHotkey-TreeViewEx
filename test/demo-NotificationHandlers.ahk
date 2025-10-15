@@ -100,7 +100,7 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
     }
     OnDeleteItem(Struct) {
         OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
-        ; We have to release the reference count so the node object can be destroyed.
+        ; We have to release the reference so the node object can be destroyed.
         ; We'll delete the children whenever a node is collapsed.
         ; If a descendent node is currently selected, we have to un-select it.
         if this.ctrl.IsAncestor(, this.Handle) {

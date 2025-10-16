@@ -547,7 +547,7 @@ class TreeViewEx {
         OutExpandedResult := this.SendItemExpanded(Struct)
         return 0
     }
-    CollapseRecursive(Handle := 0) {
+    CollapseRecursive(Handle := 0, Reset := false) {
         toCollapse := []
         toCollapse.Capacity := this.GetCount()
         if Handle {
@@ -560,8 +560,9 @@ class TreeViewEx {
                 }
             }
         }
+        action := Reset ? TVE_COLLAPSERESET : TVE_COLLAPSE
         loop toCollapse.Length {
-            SendMessage(TVM_EXPAND, TVE_COLLAPSE, toCollapse[-A_Index], this.Hwnd)
+            SendMessage(TVM_EXPAND, action, toCollapse[-A_Index], this.Hwnd)
         }
 
         return
@@ -577,7 +578,7 @@ class TreeViewEx {
             }
         }
     }
-    CollapseRecursiveNotify(Handle := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+    CollapseRecursiveNotify(Handle := 0, Reset := false, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         toCollapse := []
         toCollapse.Capacity := this.GetCount()
         if Handle {
@@ -590,9 +591,10 @@ class TreeViewEx {
                 }
             }
         }
+        action := Reset ? TVE_COLLAPSERESET : TVE_COLLAPSE
         loop toCollapse.Length {
-            if !this.SendItemExpanding(toCollapse[-A_Index], TVE_COLLAPSE, &Struct, UseCache) {
-                SendMessage(TVM_EXPAND, TVE_COLLAPSE, toCollapse[-A_Index], this.Hwnd)
+            if !this.SendItemExpanding(toCollapse[-A_Index], action, &Struct, UseCache) {
+                SendMessage(TVM_EXPAND, action, toCollapse[-A_Index], this.Hwnd)
                 this.SendItemExpanded(Struct)
             }
         }
@@ -610,7 +612,26 @@ class TreeViewEx {
             }
         }
     }
-    CollapseReset(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSE | TVE_COLLAPSERESET, Handle, this.Hwnd)
+    CollapseReset(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, Handle, this.Hwnd)
+    /**
+     * - Sends TVN_ITEMEXPANDINGW with TVE_COLLAPSE. If the return value is zero or an empty string:
+     *   - Sends TVM_EXPAND with TVE_COLLAPSE.
+     *   - Sends TVN_ITEMEXPANDEDW with TVE_COLLAPSE.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     * @param {VarRef} [OutExpandedResult] - A variable that receives the return value from
+     * `SendMessage` with TVN_ITEMEXPANDEDW.
+     * @returns {Integer} - If `SendMessage` with TVN_ITEMEXPANDINGW returns a nonzero number, returns
+     * that value. Else, returns 0.
+     */
+    CollapseResetNotify(Handle, &OutExpandedResult?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if result := this.SendItemExpanding(Handle, TVE_COLLAPSERESET, &Struct, UseCache) {
+            return result
+        }
+        SendMessage(TVM_EXPAND, TVE_COLLAPSERESET, Handle, this.Hwnd)
+        OutExpandedResult := this.SendItemExpanded(Struct)
+        return 0
+    }
     CopyItemId(Handle) => A_Clipboard := Handle
     CopyText(Handle) {
         A_Clipboard := this.GetText(Handle)
@@ -815,18 +836,38 @@ class TreeViewEx {
      * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
      * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
      */
-    ExpandRecursive(Handle := 0, MaxDepth := 0) {
-        if MaxDepth > 0 {
-            depth := 0
-            _RecurseMaxDepth(Handle)
+    ExpandRecursive(Handle := 0, MaxDepth := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if Handle {
+            if MaxDepth > 0 {
+                depth := 0
+                _RecurseMaxDepth(Handle)
+            } else {
+                _Recurse(Handle)
+            }
         } else {
-            _Recurse(Handle)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
+                if MaxDepth > 0 {
+                    depth := 0
+                    _RecurseMaxDepth(Handle)
+                    while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                        _RecurseMaxDepth(child)
+                    }
+                } else {
+                    _Recurse(child)
+                    while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                        _Recurse(child)
+                    }
+                }
+            }
         }
 
         return
 
         _Recurse(Handle) {
-            SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+            local child
+            if this.HasChildren(Handle, UseCache) {
+                SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+            }
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
                 _Recurse(child)
                 while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
@@ -835,8 +876,11 @@ class TreeViewEx {
             }
         }
         _RecurseMaxDepth(Handle) {
+            local child
             depth++
-            SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+            if this.HasChildren(Handle, UseCache) {
+                SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+            }
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
                 if depth < MaxDepth {
                     _RecurseMaxDepth(child)
@@ -858,19 +902,39 @@ class TreeViewEx {
      * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
      */
     ExpandRecursiveNotify(Handle := 0, MaxDepth := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
-        if MaxDepth > 0 {
-            depth := 0
-            _RecurseMaxDepth(Handle)
+        if Handle {
+            if MaxDepth > 0 {
+                depth := 0
+                _RecurseMaxDepth(Handle)
+            } else {
+                _Recurse(Handle)
+            }
         } else {
-            _Recurse(Handle)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
+                if MaxDepth > 0 {
+                    depth := 0
+                    _RecurseMaxDepth(Handle)
+                    while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                        _RecurseMaxDepth(child)
+                    }
+                } else {
+                    _Recurse(child)
+                    while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                        _Recurse(child)
+                    }
+                }
+            }
         }
 
         return
 
         _Recurse(Handle) {
-            if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
-                SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
-                this.SendItemExpanded(Struct)
+            local child
+            if this.HasChildren(Handle, UseCache) {
+                if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
+                    SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+                    this.SendItemExpanded(Struct)
+                }
             }
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
                 _Recurse(child)
@@ -880,10 +944,13 @@ class TreeViewEx {
             }
         }
         _RecurseMaxDepth(Handle) {
+            local child
             depth++
-            if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
-                SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
-                this.SendItemExpanded(Struct)
+            if this.HasChildren(Handle, UseCache) {
+                if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
+                    SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+                    this.SendItemExpanded(Struct)
+                }
             }
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
                 if depth < MaxDepth {
@@ -1117,6 +1184,7 @@ class TreeViewEx {
             item := TvItem()
             item.mask := TVIF_PARAM
         }
+        item.hItem := Handle
         if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
             throw OSError()
         }
@@ -1477,15 +1545,24 @@ class TreeViewEx {
     GetTextColor() => SendMessage(TVM_GETTEXTCOLOR, 0, 0, this.Hwnd)
     GetTooltips() => SendMessage(TVM_GETTOOLTIPS, 0, 0, this.Hwnd)
     GetVisibleCount() => SendMessage(TVM_GETVISIBLECOUNT, 0, 0, this.Hwnd)
-    HasChildren(Handle) {
-        item := TvItem()
-        item.mask := TVIF_CHILDREN
-        item.hItem := Handle
-        if SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
-            return item.cChildren
+    HasChildren(Handle, UseCache := true) {
+        if UseCache {
+            if this.Templates.Has('_children') {
+                item := this.Templates.Get('_children')
+            } else {
+                item := TvItem()
+                item.mask := TVIF_CHILDREN
+                this.Templates.Set('_children', item)
+            }
         } else {
+            item := TvItem()
+            item.mask := TVIF_CHILDREN
+        }
+        item.hItem := Handle
+        if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
             throw OSError()
         }
+        return item.cChildren
     }
     Hide() {
         this.Enabled := this.Visible := 0
@@ -1620,12 +1697,12 @@ class TreeViewEx {
         }
         OutStruct.x := ptDrag.X
         OutStruct.y := ptDrag.Y
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SendBeginLabelEdit(Handle, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateDispInfo(Handle, true, UseCache)
         OutStruct.code := TVN_BEGINLABELEDITW
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SendBeginRDrag(Handle, ptDrag?, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
@@ -1635,12 +1712,12 @@ class TreeViewEx {
         }
         OutStruct.x := ptDrag.X
         OutStruct.y := ptDrag.Y
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SendDeleteItem(Handle, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateNmtv(Handle, false, false, UseCache)
         OutStruct.code := TVN_DELETEITEMW
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvn-endlabeledit}
@@ -1670,18 +1747,18 @@ class TreeViewEx {
             Struct.mask := Struct.mask | TVIF_TEXT
         }
         Struct.code := TVN_ENDLABELEDITW
-        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, , this.HwndGui)
     }
     SendGetDispInfo(Handle, Mask, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateDispInfo(Handle, false, UseCache)
         OutStruct.mask := Mask
         OutStruct.code := TVN_GETDISPINFOW
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SendGetInfoTip(Handle, TextMax := TVEX_DEFAULT_TEXT_MAX, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateInfoTip(Handle, UseCache)
         OutStruct.SetTextBuffer(TextMax)
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemchanged}
@@ -1705,14 +1782,14 @@ class TreeViewEx {
             Struct.uChanged := TVIF_STATE
         }
         Struct.code := TVN_ITEMCHANGEDW
-        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, , this.HwndGui)
     }
     SendItemChanging(Handle, StateNew, StateOld, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateItemChange(Handle, UseCache)
         OutStruct.uStateNew := StateNew
         OutStruct.uStateOld := StateOld
         OutStruct.code := TVN_ITEMCHANGINGW
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemexpanded}
@@ -1740,24 +1817,24 @@ class TreeViewEx {
             }
         }
         Struct.code := TVN_ITEMEXPANDEDW
-        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, , this.HwndGui)
     }
     SendItemExpanding(Handle, Action, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
         OutStruct.code := TVN_ITEMEXPANDINGW
         OutStruct.action := Action
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SendKeyDown(Handle, VKey, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateKeyDown(UseCache)
         OutStruct.wVKey := VKey
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SendSetDispInfo(Handle, Mask, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         OutStruct := this.GetTemplateDispInfo(Handle, false, UseCache)
         OutStruct.mask := Mask
         OutStruct.code := TVN_SETDISPINFOW
-        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, , this.HwndGui)
     }
     SetAutoScrollInfo(PixelsPerSecond, RedrawInterval) => SendMessage(TVM_SETAUTOSCROLLINFO, PixelsPerSecond, RedrawInterval, this.Hwnd)
     SetBkColor(Color) => SendMessage(TVM_SETBKCOLOR, 0, Color, this.Hwnd)

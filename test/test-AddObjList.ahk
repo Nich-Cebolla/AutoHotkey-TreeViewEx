@@ -31,6 +31,7 @@ class test_AddObjList {
     }
     static Call() {
         g := this.g := Gui('+Resize')
+        g.OnEvent('Close', (*) => ExitApp())
         ; Add TreeViewEx
         tvex1 := this.tvex1 := TreeViewEx(g, { Width: 300, Rows: 12 })
         list := this.list := [this.Obj.Clone(), this.Obj.Clone(), this.Obj.Clone()]

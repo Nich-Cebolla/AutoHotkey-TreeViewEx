@@ -13,6 +13,7 @@ class Demo {
 
         ; Create Gui
         g := this.g := Gui('+Resize')
+        g.OnEvent('Close', (*) => ExitApp())
 
         ; Add TreeViewEx
         ; We are enabling TVS_EDITLABELS, press f2 with an item selected to edit the label.

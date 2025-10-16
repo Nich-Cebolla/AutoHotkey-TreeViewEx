@@ -31,6 +31,7 @@ class test_EnumChildren {
     }
     static Call() {
         g := this.g := Gui('+Resize')
+        g.OnEvent('Close', (*) => ExitApp())
         tvex := this.tvex := TreeViewEx(g, { Width: 300, Rows: 12 })
         tvex.AddObj(this.Obj)
         tvex.GetPos(&x, &y, &w, &h)

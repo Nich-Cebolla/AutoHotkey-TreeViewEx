@@ -50,10 +50,10 @@ class TreeViewExContextMenu extends MenuEx {
     }
     SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         if Item {
-            Ctrl.CollapseRecursiveNotify(Item || 0)
+            Ctrl.CollapseRecursive(Item || 0)
             return 'Collapsed from node: ' Ctrl.GetText(Item)
         } else {
-            Ctrl.CollapseRecursiveNotify(0)
+            Ctrl.CollapseRecursive(0)
             return 'Collapsed root nodes'
         }
     }
@@ -74,10 +74,10 @@ class TreeViewExContextMenu extends MenuEx {
     }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         if Item {
-            Ctrl.ExpandRecursiveNotify(Item || 0)
+            Ctrl.ExpandRecursive(Item || 0)
             return 'Expanded from node: ' Ctrl.GetText(Item)
         } else {
-            Ctrl.ExpandRecursiveNotify(0)
+            Ctrl.ExpandRecursive(0)
             return 'Expanded root nodes'
         }
     }
@@ -124,6 +124,7 @@ class demo_ContextMenu {
 
         ; Create Gui
         g := this.g := Gui('+Resize')
+        g.OnEvent('Close', (*) => ExitApp())
 
         ; Add TreeViewEx
         tvex := this.tvex := TreeViewEx(g, { Width: 300, Rows: 17 })

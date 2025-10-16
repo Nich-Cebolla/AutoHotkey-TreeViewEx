@@ -9,6 +9,7 @@
 #include ..\src\VENV.ahk
 
 !esc::ExitApp()
+!+`::Reload()
 f2::SendLabelEditBegin()
 
 Demo()
@@ -18,6 +19,7 @@ class Demo {
 
         ; Create Gui
         g := this.g := Gui('+Resize')
+        g.OnEvent('Close', (*) => ExitApp())
 
         ; Add TreeViewEx
         ; We are enabling TVS_EDITLABELS, press f2 with an item selected to edit the label.
@@ -149,21 +151,21 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         if IsObject(this.Value) {
             if HasProp(this.Value, 'Name') {
                 if IsNumber(this.Value.Name) {
-                    Struct.pszText := String(this.Value.Name)
+                    Struct.pszText := String(this.Value.Name) ' :: ' this.Handle
                 } else {
-                    Struct.pszText := '"' this.Value.Name '"'
+                    Struct.pszText := '"' this.Value.Name '" :: ' this.Handle
                 }
             } else {
-                Struct.pszText := '{ ' Type(this.Value) ' }'
+                Struct.pszText := '{ ' Type(this.Value) ' } :: ' this.Handle
             }
         } else if IsNumber(this.Value) {
-            Struct.pszText := String(this.Value)
+            Struct.pszText := String(this.Value) ' :: ' this.Handle
         } else {
-            Struct.pszText := '"' this.Value '"'
+            Struct.pszText := '"' this.Value '" :: ' this.Handle
         }
     }
     OnGetInfoTip(Struct) {
-        OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
+        ; OutputDebug('Tick: ' A_TickCount ', Func: ' A_ThisFunc ' : Code: ' Struct.code_int '; Node: ' this.Handle '`n')
         ; Just set the pszText property of the structure to define the tooltip text.
         Struct.pszText := 'Tooltip for ' this.Name
     }
@@ -218,6 +220,8 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
                     ; caused by incorrect handling of the reference count.
                     ctrl.DeleteItem(child)
                 }
+                ; Set flag indicating children have not been added.
+                this.flag_children := 0
             case TVE_EXPAND:
                 ; do nothing
             case TVE_EXPANDPARTIAL:
@@ -241,10 +245,15 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
                 ; Do nothing
             case TVE_EXPAND:
                 ; Add items
-                struct := ctrl.GetTemplate('insert')
-                struct.hParent := this.Handle
-                for child in this.Value.Children {
-                    ctrl.AddNode(struct, child)
+                _struct := ctrl.GetTemplate('insert')
+                _struct.hParent := this.Handle
+                ; Check if children have already been added
+                if !this.flag_children {
+                    ; Add children
+                    for child in this.Value.Children {
+                        ctrl.AddNode(_struct, child)
+                    }
+                    this.flag_children := 1
                 }
             ; To be added.
             case TVE_EXPANDPARTIAL: throw Error('Invalid operation.', -1)
@@ -281,17 +290,17 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
             if IsObject(this.Value) {
                 if HasProp(this.Value, 'Name') {
                     if IsNumber(this.Value.Name) {
-                        return String(this.Value.Name)
+                        return String(this.Value.Name) ' :: ' this.Handle
                     } else {
-                        return '"' this.Value.Name '"'
+                        return '"' this.Value.Name '" :: ' this.Handle
                     }
                 } else {
-                    return '{ ' Type(this.Value) ' }'
+                    return '{ ' Type(this.Value) ' } :: ' this.Handle
                 }
             } else if IsNumber(this.Value) {
-                return String(this.Value)
+                return String(this.Value) ' :: ' this.Handle
             } else {
-                return '"' this.Value '"'
+                return '"' this.Value '" :: ' this.Handle
             }
         }
     }
@@ -300,6 +309,7 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
         this.DeleteProp('__New')
         proto := this.Prototype
         proto.Handle := ''
+        proto.flag_children := 0
     }
 }
 
@@ -417,8 +427,7 @@ class TreeViewExContextMenu extends MenuEx {
             { Name: 'Copy node ID', Value: 'SelectCopyNodeId' }
           , { Name: 'Copy value', Value: 'SelectCopyValue' }
           , { Name: 'Collapse recursive', Value: 'SelectCollapseRecursive' }
-          , { Name: 'Expand', Value: 'SelectExpand' }
-          , { Name: 'Expand recursive', Value: 'SelectExpandRecursive' }
+          , { Name: 'Expand recursive notify', Value: 'SelectExpandRecursiveNotify' }
         ]
     }
     ; When the context menu is activated, if the MenuEx object (an instance of this class is
@@ -443,6 +452,7 @@ class TreeViewExContextMenu extends MenuEx {
     }
     SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         if Item {
+            ; Use the Notify version
             Ctrl.CollapseRecursiveNotify(Item || 0)
             return 'Collapsed from node: ' Ctrl.GetText(Item)
         } else {
@@ -461,12 +471,9 @@ class TreeViewExContextMenu extends MenuEx {
         A_Clipboard := text
         return 'Copied: ' text
     }
-    SelectExpand(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.ExpandNotify(Item)
-        return 'Expanded from node: ' Ctrl.GetText(Item)
-    }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         if Item {
+            ; Use the Notify version
             Ctrl.ExpandRecursiveNotify(Item || 0)
             return 'Expanded from node: ' Ctrl.GetText(Item)
         } else {

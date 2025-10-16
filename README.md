@@ -195,6 +195,10 @@ None.
 |  AddObjListFromTemplate  |      X      |
 |  AddTemplate             |      X      |
 |  Collapse                |      X      |
+|  CollapseNotify          |             |
+|  CollapseRecursive       |      X      |
+|  CollapseRecursiveNotify |      X      |
+|  CollapseReset           |             |
 |  CollapseReset           |             |
 |  CopyItemId              |             |
 |  CopyText                |             |
@@ -211,8 +215,10 @@ None.
 |  EnumChildren            |      X      |
 |  EnumChildrenRecursive   |      X      |
 |  Expand                  |      X      |
+|  ExpandNotify            |             |
 |  ExpandPartial           |             |
 |  ExpandRecursive         |      X      |
+|  ExpandRecursiveNotify   |      X      |
 |  GetBkColor              |             |
 |  GetEditControl          |      X      |
 |  GetExtendedStyle        |             |
@@ -237,6 +243,12 @@ None.
 |  GetRoot                 |             |
 |  GetScrollTime           |             |
 |  GetSelected             |      X      |
+|  GetTemplate             |      X      |
+|  GetTemplateDispInfo     |             |
+|  GetTemplateInfoTip      |             |
+|  GetTemplateItemChange   |             |
+|  GetTemplateKeyDown      |             |
+|  GetTemplateNmtv         |      X      |
 |  GetText                 |      X      |
 |  GetTextColor            |             |
 |  GetTooltips             |             |
@@ -252,6 +264,19 @@ None.
 |  MapHTreeItemToAccId     |             |
 |  OnNotify                |      X      |
 |  Select                  |      X      |
+|  SendBeginDrag           |             |
+|  SendBeginLabelEdit      |             |
+|  SendBeginRDrag          |             |
+|  SendDeleteItem          |             |
+|  SendEndLabelEdit        |             |
+|  SendGetDispInfo         |             |
+|  SendGetInfoTip          |             |
+|  SendItemChanged         |             |
+|  SendItemChanging        |             |
+|  SendItemExpanded        |      X      |
+|  SendItemExpanding       |      X      |
+|  SendKeyDown             |             |
+|  SendSetDispInfo         |             |
 |  SetAutoScrollInfo       |             |
 |  SetBkColor              |             |
 |  SetBorder               |             |

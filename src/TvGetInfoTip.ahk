@@ -25,7 +25,15 @@ class TvGetInfoTip extends TreeViewExStructBase {
         proto.offset_cchTextMax  := 0 + A_PtrSize * 4
         proto.offset_hItem       := 0 + A_PtrSize * 5
         proto.offset_lParam      := 0 + A_PtrSize * 6
+
+        proto.__pszText := ''
     }
+    SetTextBuffer(Bytes := TVEX_DEFAULT_TEXT_MAX) {
+        this.__pszText := Buffer(Bytes)
+        this.cchTextMax := Floor(Bytes / 2)
+        NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
+    }
+
     hwndFrom {
         Get => NumGet(this.Buffer, this.offset_hwndFrom, 'ptr')
         Set {
@@ -60,19 +68,24 @@ class TvGetInfoTip extends TreeViewExStructBase {
             }
         }
         Set {
-            if Type(Value) = 'String' {
-                if !this.HasOwnProp('__pszText')
-                || (this.__pszText is Buffer && this.__pszText.Size < StrPut(Value, TVEX_DEFAULT_ENCODING)) {
-                    this.__pszText := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
-                    NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
+            if ptr := NumGet(this.Buffer, this.offset_pszText, 'ptr') {
+                if this.__pszText {
+                    bytes := StrPut(Value, TVEX_DEFAULT_ENCODING)
+                    if bytes > this.__pszText.Size {
+                        this.__pszText.Size := bytes
+                        ptr := this.__pszText.Ptr
+                        NumPut('ptr', ptr, this.Buffer, this.offset_pszText)
+                    }
                 }
-                StrPut(Value, this.__pszText, TVEX_DEFAULT_ENCODING)
-            } else if Value is Buffer {
-                this.__pszText := Value
-                NumPut('ptr', this.__pszText.Ptr, this.Buffer, this.offset_pszText)
             } else {
-                this.__pszText := Value
-                NumPut('ptr', this.__pszText, this.Buffer, this.offset_pszText)
+                this.__pszText := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
+                ptr := this.__pszText.Ptr
+                NumPut('ptr', ptr, this.Buffer, this.offset_pszText)
+            }
+            if chars := this.cchTextMax {
+                StrPut(SubStr(Value, 1, chars - 1), ptr, TVEX_DEFAULT_ENCODING)
+            } else {
+                StrPut(Value, ptr, TVEX_DEFAULT_ENCODING)
             }
         }
     }

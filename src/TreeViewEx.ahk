@@ -525,12 +525,28 @@ class TreeViewEx {
      * {@link TvSortCb}.
      */
     AddTemplate(Items*) {
-        if !this.HasOwnProp('Templates') {
-            this.Templates := TreeViewExCollection_Template(false)
-        }
         this.Templates.Set(Items*)
     }
     Collapse(Handle) => SendMessage(TVM_EXPAND, TVE_COLLAPSE, Handle, this.Hwnd)
+    /**
+     * - Sends TVN_ITEMEXPANDINGW with TVE_COLLAPSE. If the return value is zero or an empty string:
+     *   - Sends TVM_EXPAND with TVE_COLLAPSE.
+     *   - Sends TVN_ITEMEXPANDEDW with TVE_COLLAPSE.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     * @param {VarRef} [OutExpandedResult] - A variable that receives the return value from
+     * `SendMessage` with TVN_ITEMEXPANDEDW.
+     * @returns {Integer} - If `SendMessage` with TVN_ITEMEXPANDINGW returns a nonzero number, returns
+     * that value. Else, returns 0.
+     */
+    CollapseNotify(Handle, &OutExpandedResult?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if result := this.SendItemExpanding(Handle, TVE_COLLAPSE, &Struct, UseCache) {
+            return result
+        }
+        SendMessage(TVM_EXPAND, TVE_COLLAPSE, Handle, this.Hwnd)
+        OutExpandedResult := this.SendItemExpanded(Struct)
+        return 0
+    }
     CollapseRecursive(Handle := 0) {
         toCollapse := []
         toCollapse.Capacity := this.GetCount()
@@ -546,6 +562,39 @@ class TreeViewEx {
         }
         loop toCollapse.Length {
             SendMessage(TVM_EXPAND, TVE_COLLAPSE, toCollapse[-A_Index], this.Hwnd)
+        }
+
+        return
+
+        _Recurse(Handle) {
+            local child, _child
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                toCollapse.Push(Handle)
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+    }
+    CollapseRecursiveNotify(Handle := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        toCollapse := []
+        toCollapse.Capacity := this.GetCount()
+        if Handle {
+            _Recurse(Handle)
+        } else {
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+        loop toCollapse.Length {
+            if !this.SendItemExpanding(toCollapse[-A_Index], TVE_COLLAPSE, &Struct, UseCache) {
+                SendMessage(TVM_EXPAND, TVE_COLLAPSE, toCollapse[-A_Index], this.Hwnd)
+                this.SendItemExpanded(Struct)
+            }
         }
 
         return
@@ -744,6 +793,25 @@ class TreeViewEx {
     }
     Expand(Handle) => SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
     /**
+     * - Sends TVN_ITEMEXPANDINGW with TVE_EXPAND. If the return value is zero or an empty string:
+     *   - Sends TVM_EXPAND with TVE_EXPAND.
+     *   - Sends TVN_ITEMEXPANDEDW with TVE_EXPAND.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     * @param {VarRef} [OutExpandedResult] - A variable that receives the return value from
+     * `SendMessage` with TVN_ITEMEXPANDEDW.
+     * @returns {Integer} - If `SendMessage` with TVN_ITEMEXPANDINGW returns a nonzero number, returns
+     * that value. Else, returns 0.
+     */
+    ExpandNotify(Handle, &OutExpandedResult?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if result := this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
+            return result
+        }
+        SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+        OutExpandedResult := this.SendItemExpanded(Struct)
+        return 0
+    }
+    /**
      * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
      * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
      */
@@ -769,6 +837,54 @@ class TreeViewEx {
         _RecurseMaxDepth(Handle) {
             depth++
             SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                if depth < MaxDepth {
+                    _RecurseMaxDepth(child)
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    if depth < MaxDepth {
+                        _RecurseMaxDepth(child)
+                    }
+                }
+            }
+            depth--
+        }
+        _Throw() {
+            throw Error('Sending message ``TVM_GETITEMW`` failed.', -1)
+        }
+    }
+    /**
+     * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
+     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
+     */
+    ExpandRecursiveNotify(Handle := 0, MaxDepth := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if MaxDepth > 0 {
+            depth := 0
+            _RecurseMaxDepth(Handle)
+        } else {
+            _Recurse(Handle)
+        }
+
+        return
+
+        _Recurse(Handle) {
+            if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
+                SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+                this.SendItemExpanded(Struct)
+            }
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                _Recurse(child)
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    _Recurse(child)
+                }
+            }
+        }
+        _RecurseMaxDepth(Handle) {
+            depth++
+            if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
+                SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+                this.SendItemExpanded(Struct)
+            }
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
                 if depth < MaxDepth {
                     _RecurseMaxDepth(child)
@@ -988,6 +1104,24 @@ class TreeViewEx {
         SendMessage(TVM_GETITEMW, 0, struct.Ptr, this.Hwnd)
         return ObjFromPtrAddRef(struct.lParam)
     }
+    GetParam(Handle, UseCache := true) {
+        if UseCache {
+            if this.Templates.Has('_param') {
+                item := this.Templates.Get('_param')
+            } else {
+                item := TvItem()
+                item.mask := TVIF_PARAM
+                this.Templates.Set('_param', item)
+            }
+        } else {
+            item := TvItem()
+            item.mask := TVIF_PARAM
+        }
+        if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
+            throw OSError()
+        }
+        return item.lParam
+    }
     GetParent(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
     GetPos(&X?, &Y?, &W?, &H?) {
         rc := WinRect(this.Hwnd, 0)
@@ -1011,6 +1145,324 @@ class TreeViewEx {
     GetSelected() => SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
     GetTemplate(Name) {
         return this.Templates.Get(Name)
+    }
+    /**
+     * Returns a template {@link TvDispInfoEx} object with the general properties already set. This
+     * does the following:
+     * - Sets the state mask with TVIS_STATEIMAGEMASK | TVIS_EXPANDED | TVIS_EXPANDEDONCE | TVIS_SELECTED
+     *   | TVIS_CUT | TVIS_DROPHILITED | TVIS_BOLD
+     * - If `FillText` is true
+     *   - Sets the mask with TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT.
+     *   - Sets cchTextMax with `TVEX_DEFAULT_TEXT_MAX / 2` (TVEX_DEFAULT_TEXT_MAX = 256 by default, so 128).
+     *   - Sets pszText with a buffer of size `TVEX_DEFAULT_TEXT_MAX`.
+     * - If `FillText` is false
+     *   - Sets the mask with TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE.
+     * - Sets the hwndFrom member with {@link TreeViewEx#Hwnd}.
+     * - Sets the idFrom member with {@link TreeViewEx.Prototype.CtrlId}.
+     * - Sends TVM_GETITEMW.
+     *
+     * The caller then should:
+     * - Set the code property.
+     * - Send the notification.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     *
+     * @param {Boolean} [FillText = false] - If true, includes TVIF_TEXT and sets cchTextMax and
+     * pszText.
+     *
+     * @param {Boolean} [UseCache = true] - If true:
+     * - If this has been called with the same `FillText` value in the past and if
+     *   that object still exists in {@link TreeViewEx#Templates}, the cached object is retrieved
+     *   and used instead of creating a new object.
+     * - If the relevant object does not exist in {@link TreeViewEx#Templates}, then a new object
+     *   is created and cached.
+     * - The key used depends on the values of `FillText`.
+     *
+     * If false, a new object is always created and is not cached.
+     *
+     * @returns {TvDispInfoEx}
+     */
+    GetTemplateDispInfo(Handle, FillText := false, UseCache := true) {
+        local nmtv
+        if UseCache {
+            if FillText {
+                if this.Templates.Has('_dispinfo_text') {
+                    nmtv := this.Templates.Get('_dispinfo_text')
+                } else {
+                    _GetText()
+                    this.Templates.Set('_dispinfo_text', nmtv)
+                }
+            } else {
+                if this.Templates.Has('_dispinfo_notext') {
+                    nmtv := this.Templates.Get('_dispinfo_notext')
+                } else {
+                    _GetNoText()
+                    this.Templates.Set('_dispinfo_notext', nmtv)
+                }
+            }
+        } else if FillText {
+            _GetText()
+        } else {
+            _GetNoText()
+        }
+        nmtv.idFrom := this.CtrlId
+        nmtv.hItem := Handle
+        if !SendMessage(TVM_GETITEMW, 0, nmtv.Ptr + nmtv.offset_mask, this.Hwnd) {
+            throw OSError()
+        }
+        return nmtv
+
+        _GetNoText() {
+            nmtv := TvDispInfoEx()
+            nmtv.hwndFrom := this.Hwnd
+            nmtv.mask := TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE
+            nmtv.stateMask := TVIS_STATEIMAGEMASK | TVIS_EXPANDED | TVIS_EXPANDEDONCE
+                | TVIS_SELECTED | TVIS_CUT | TVIS_DROPHILITED | TVIS_BOLD
+        }
+        _GetText() {
+            _GetNoText()
+            nmtv.mask := nmtv.mask | TVIF_TEXT
+            nmtv.SetTextBuffer()
+        }
+    }
+    /**
+     * Returns a template {@link TvGetInfoTip} object with the general properties already set. This
+     * does the following:
+     * - Sets the hwndFrom member with {@link TreeViewEx#Hwnd}.
+     * - Sets the idFrom member with {@link TreeViewEx.Prototype.CtrlId}.
+     * - Sets the code member with TVN_GETINFOTIPW.
+     * - Sets hItem with `Handle`.
+     * - Sends TVM_GETITEMW (with a separate structure) to get the lParam associated with `Handle`
+     *   and sets lParam.
+     *
+     * The caller then should:
+     * - Call {@link TvGetInfoTip.Prototype.SetTextBuffer} passing the buffer size.
+     * - Send the notification.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     *
+     * @param {Boolean} [UseCache = true] - If true:
+     * - If this has been called in the past and if that object still exists in
+     *   {@link TreeViewEx#Templates}, the cached object is retrieved and used instead of creating a
+     *   new object.
+     * - If the relevant object does not exist in {@link TreeViewEx#Templates}, then a new object
+     *   is created and cached.
+     *
+     * If false, a new object is always created and is not cached.
+     *
+     * @returns {TvGetInfoTip}
+     */
+    GetTemplateInfoTip(Handle, UseCache := true) {
+        local nmtv
+        if UseCache {
+            if this.Templates.Has('_infotip') {
+                nmtv := this.Templates.Get('_infotip')
+            } else {
+                _Get()
+                this.Templates.Set('_infotip', nmtv)
+            }
+        } else {
+            _Get()
+        }
+        nmtv.hItem := Handle
+        nmtv.lParam := this.GetParam(Handle, UseCache)
+        nmtv.idFrom := this.CtrlId
+        return nmtv
+
+        _Get() {
+            nmtv := TvGetInfoTip()
+            nmtv.hwndFrom := this.Hwnd
+            nmtv.code := TVN_GETINFOTIPW
+        }
+    }
+    /**
+     * Returns a template {@link TvItemChange} object with the general properties already set. This
+     * does the following:
+     * - Sets the hwndFrom member with {@link TreeViewEx#Hwnd}.
+     * - Sets the idFrom member with {@link TreeViewEx.Prototype.CtrlId}.
+     * - Sets hItem with `Handle`.
+     * - Sends TVM_GETITEMW (with a separate structure) to get the lParam associated with `Handle`
+     *   and sets lParam.
+     * - Sets uChanged with TVIF_STATE.
+     *
+     * The caller then should:
+     * - Set code, uStateNew and uStateOld.
+     * - Send the notification.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     *
+     * @param {Boolean} [UseCache = true] - If true:
+     * - If this has been called in the past and if that object still exists in
+     *   {@link TreeViewEx#Templates}, the cached object is retrieved and used instead of creating a
+     *   new object.
+     * - If the relevant object does not exist in {@link TreeViewEx#Templates}, then a new object
+     *   is created and cached.
+     *
+     * If false, a new object is always created and is not cached.
+     *
+     * @returns {TvItemChange}
+     */
+    GetTemplateItemChange(Handle, UseCache := true) {
+        local nmtv
+        if UseCache {
+            if this.Templates.Has('_itemchange') {
+                nmtv := this.Templates.Get('_itemchange')
+            } else {
+                _Get()
+                this.Templates.Set('_itemchange', nmtv)
+            }
+        } else {
+            _Get()
+        }
+        nmtv.hItem := Handle
+        nmtv.lParam := this.GetParam(Handle, UseCache)
+        nmtv.idFrom := this.CtrlId
+        return nmtv
+
+        _Get() {
+            nmtv := TvItemChange()
+            nmtv.hwndFrom := this.Hwnd
+            nmtv.uChanged := TVIF_STATE
+        }
+    }
+    /**
+     * Returns a template {@link TvKeyDown} object with the general properties already set. This
+     * does the following:
+     * - Sets the hwndFrom member with {@link TreeViewEx#Hwnd}.
+     * - Sets the idFrom member with {@link TreeViewEx.Prototype.CtrlId}.
+     * - Sets the code member with TVN_KEYDOWN.
+     * - Sets the flags member with 0.
+     *
+     * The caller then should:
+     * - Set wVKey.
+     * - Send the notification.
+     *
+     * @param {Boolean} [UseCache = true] - If true:
+     * - If this has been called in the past and if that object still exists in
+     *   {@link TreeViewEx#Templates}, the cached object is retrieved and used instead of creating a
+     *   new object.
+     * - If the relevant object does not exist in {@link TreeViewEx#Templates}, then a new object
+     *   is created and cached.
+     *
+     * If false, a new object is always created and is not cached.
+     *
+     * @returns {TvKeyDown}
+     */
+    GetTemplateKeyDown(UseCache := true) {
+        local nmtv
+        if UseCache {
+            if this.Templates.Has('_keydown') {
+                nmtv := this.Templates.Get('_keydown')
+            } else {
+                _Get()
+                this.Templates.Set('_keydown', nmtv)
+            }
+        } else {
+            _Get()
+        }
+        nmtv.idFrom := this.CtrlId
+        return nmtv
+
+        _Get() {
+            nmtv := TvKeyDown()
+            nmtv.hwndFrom := this.Hwnd
+            nmtv.code := TVN_KEYDOWN
+            nmtv.flags := 0
+        }
+    }
+    /**
+     * Returns a template {@link NmTreeView} object with the general properties already set. This
+     * does the following:
+     * - Sets the state mask with TVIS_STATEIMAGEMASK | TVIS_EXPANDED | TVIS_EXPANDEDONCE | TVIS_SELECTED
+     *   | TVIS_CUT | TVIS_DROPHILITED | TVIS_BOLD
+     * - If `FillText` is true
+     *   - Sets the mask with TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_TEXT.
+     *   - Sets cchTextMax with `TVEX_DEFAULT_TEXT_MAX / 2` (TVEX_DEFAULT_TEXT_MAX = 256 by default, so 128).
+     *   - Sets pszText with a buffer of size `TVEX_DEFAULT_TEXT_MAX`.
+     * - If `FillText` is false
+     *   - Sets the mask with TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE.
+     * - Sets the hwndFrom member with {@link TreeViewEx#Hwnd}.
+     * - Sets the idFrom member with {@link TreeViewEx.Prototype.CtrlId}.
+     * - If `FillNew` is true
+     *   - Sets hItem_new with `Handle`.
+     *   - Sends TVM_GETITEMW specifying the offset to fill the new members.
+     * - If `FillNew` is false
+     *   - Sets hItem_old with `Handle`.
+     *   - Sends TVM_GETITEMW specifying the offset to fill the old members.
+     *
+     * The caller then should:
+     * - Set the other properties (as needed) like code, action, ptDrag.
+     * - Send the notification.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     *
+     * @param {Boolean} [FillNew = true] - If true, sends TVM_GETITEMW to fill the itemNew member of
+     * the NMTREEVIEWW structure (setting the properties suffixed with "_new"). If false, sends
+     * TVM_GETITEMW to fill the itemOld member of the structure (setting the properties suffixed with
+     * "_old").
+     *
+     * @param {Boolean} [FillText = false] - If true, includes TVIF_TEXT and sets cchTextMax and
+     * pszText.
+     *
+     * @param {Boolean} [UseCache = true] - If true:
+     * - If this has been called with the same values of `FillNew` and `FillText` in the past and if
+     *   that object still exists in {@link TreeViewEx#Templates}, the cached object is retrieved
+     *   and used instead of creating a new object.
+     * - If the relevant object does not exist in {@link TreeViewEx#Templates}, then a new object
+     *   is created and cached.
+     * - The key used depends on the values of `Fillnew` and `FillText`.
+     *
+     * If false, a new object is always created and is not cached.
+     *
+     * @returns {NmTreeView}
+     */
+    GetTemplateNmtv(Handle, FillNew := true, FillText := false, UseCache := true) {
+        local nmtv
+        if FillNew {
+            suffix := '_new'
+        } else {
+            suffix := '_old'
+        }
+        if UseCache {
+            if FillText {
+                if this.Templates.Has('_nmtv' suffix '_text') {
+                    nmtv := this.Templates.Get('_nmtv' suffix '_text')
+                } else {
+                    _GetText()
+                    this.Templates.Set('_nmtv' suffix '_text', nmtv)
+                }
+            } else {
+                if this.Templates.Has('_nmtv' suffix '_notext') {
+                    nmtv := this.Templates.Get('_nmtv' suffix '_notext')
+                } else {
+                    _GetNoText()
+                    this.Templates.Set('_nmtv' suffix '_notext', nmtv)
+                }
+            }
+        } else if FillText {
+            _GetText()
+        } else {
+            _GetNoText()
+        }
+        nmtv.idFrom := this.CtrlId
+        nmtv.hItem%suffix% := Handle
+        if !SendMessage(TVM_GETITEMW, 0, nmtv.Ptr + nmtv.offset_mask%suffix%, this.Hwnd) {
+            throw OSError()
+        }
+        return nmtv
+
+        _GetNoText() {
+            nmtv := NmTreeView()
+            nmtv.hwndFrom := this.Hwnd
+            nmtv.mask%suffix% := TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE
+            nmtv.stateMask%suffix% := TVIS_STATEIMAGEMASK | TVIS_EXPANDED | TVIS_EXPANDEDONCE
+                | TVIS_SELECTED | TVIS_CUT | TVIS_DROPHILITED | TVIS_BOLD
+        }
+        _GetText() {
+            _GetNoText()
+            nmtv.mask%suffix% := nmtv.mask%suffix% | TVIF_TEXT
+            nmtv.SetTextBuffer(suffix)
+        }
     }
     GetText(Handle) {
         struct := TvItem()
@@ -1160,6 +1612,153 @@ class TreeViewEx {
         this.ParentSubclass.Dispose()
     }
     Select(Handle) => SendMessage(TVM_SELECTITEM, TVGN_CARET, Handle, this.Hwnd)
+    SendBeginDrag(Handle, ptDrag?, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
+        OutStruct.code := TVN_BEGINDRAGW
+        if !IsSet(ptDrag) {
+            ptDrag := Point.FromCursor()
+        }
+        OutStruct.x := ptDrag.X
+        OutStruct.y := ptDrag.Y
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendBeginLabelEdit(Handle, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateDispInfo(Handle, true, UseCache)
+        OutStruct.code := TVN_BEGINLABELEDITW
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendBeginRDrag(Handle, ptDrag?, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
+        OutStruct.code := TVN_BEGINRDRAGW
+        if !IsSet(ptDrag) {
+            ptDrag := Point.FromCursor()
+        }
+        OutStruct.x := ptDrag.X
+        OutStruct.y := ptDrag.Y
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendDeleteItem(Handle, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateNmtv(Handle, false, false, UseCache)
+        OutStruct.code := TVN_DELETEITEMW
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    /**
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvn-endlabeledit}
+     *
+     * @param {TvDispInfoEx} Struct - The {@link TvDispInfoEx} object with the modified
+     * NMTVDISPINFO structure. The item member of this structure is a TVITEM structure whose hItem,
+     * lParam, and pszText members contain valid information about the item that was edited. If label
+     * editing was canceled, the pszText member of the TVITEM structure is NULL; otherwise, pszText
+     * is the address of the edited text.
+     *
+     * @param {Boolean} [FillMembers = false] - If true, the caller is only responsible for providing
+     * a {@link TvDispInfoEx} object with the pszText property and hItem property set; this function
+     * will fill the other members of the structure that are expected to be filled when sending the
+     * notification. If false, the caller has filled all expected members (except code which this
+     * this function always sets).
+     *
+     * @returns {Integer} - The value returned by `SendMessage`.
+     */
+    SendEndLabelEdit(Struct, FillMembers := false) {
+        if FillMembers {
+            Struct.hwndFrom := this.Hwnd
+            Struct.idFrom := this.CtrlId
+            Struct.mask := TVIF_HANDLE | TVIF_PARAM
+            if !SendMessage(TVM_GETITEMW, 0, Struct.Ptr + Struct.offset_mask, this.Hwnd) {
+                throw OSError()
+            }
+            Struct.mask := Struct.mask | TVIF_TEXT
+        }
+        Struct.code := TVN_ENDLABELEDITW
+        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendGetDispInfo(Handle, Mask, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateDispInfo(Handle, false, UseCache)
+        OutStruct.mask := Mask
+        OutStruct.code := TVN_GETDISPINFOW
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendGetInfoTip(Handle, TextMax := TVEX_DEFAULT_TEXT_MAX, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateInfoTip(Handle, UseCache)
+        OutStruct.SetTextBuffer(TextMax)
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    /**
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemchanged}
+     *
+     * @param {TvItemChange} Struct - The {@link TvItemChange} object, typically the same object
+     * that was sent with TVN_ITEMCHANGINGW.
+     *
+     * @param {Boolean} [FillMembers = false] - If true, the caller is only responsible for providing
+     * a {@link TvItemChange} object with the hItem, uStateNew, and uStateOld properties set; this
+     * function will fill the other members of the structure that are expected to be filled when
+     * sending the notification. If false, the caller has filled all expected members (except code
+     * which this this function always sets).
+     *
+     * @returns {Integer} - The value returned by `SendMessage`.
+     */
+    SendItemChanged(Struct, FillMembers := false, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if FillMembers {
+            Struct.lParam := this.GetParam(Struct.hItem, UseCache)
+            Struct.idFrom := this.CtrlId
+            Struct.hwndFrom := this.Hwnd
+            Struct.uChanged := TVIF_STATE
+        }
+        Struct.code := TVN_ITEMCHANGEDW
+        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendItemChanging(Handle, StateNew, StateOld, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateItemChange(Handle, UseCache)
+        OutStruct.uStateNew := StateNew
+        OutStruct.uStateOld := StateOld
+        OutStruct.code := TVN_ITEMCHANGINGW
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    /**
+     * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvn-itemexpanded}
+     *
+     * @param {NmTreeView} Struct - The {@link NmTreeView} object, typically the same object
+     * that was sent with TVN_ITEMEXPANDINGW.
+     *
+     * @param {Boolean} [FillMembers = false] - If true, the caller is only responsible for providing
+     * a {@link NmTreeView} object with the hItem and action properties set; this
+     * function will fill the other members of the structure that are expected to be filled when
+     * sending the notification. If false, the caller has filled all expected members (except code
+     * which this this function always sets).
+     *
+     * @returns {Integer} - The value returned by `SendMessage`.
+     */
+    SendItemExpanded(Struct, FillMembers := false) {
+        if FillMembers {
+            Struct.idFrom := this.CtrlId
+            Struct.hwndFrom := this.Hwnd
+            Struct.mask_new := TVIF_HANDLE | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE
+            Struct.stateMask_new := TVIS_STATEIMAGEMASK | TVIS_EXPANDED | TVIS_EXPANDEDONCE
+                | TVIS_SELECTED | TVIS_CUT | TVIS_DROPHILITED | TVIS_BOLD
+            if !SendMessage(TVM_GETITEMW, 0, Struct.Ptr + Struct.offset_mask_new, this.Hwnd) {
+                throw OSError()
+            }
+        }
+        Struct.code := TVN_ITEMEXPANDEDW
+        return SendMessage(WM_NOTIFY, Struct.idFrom, Struct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendItemExpanding(Handle, Action, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
+        OutStruct.code := TVN_ITEMEXPANDINGW
+        OutStruct.action := Action
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendKeyDown(Handle, VKey, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateKeyDown(UseCache)
+        OutStruct.wVKey := VKey
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
+    SendSetDispInfo(Handle, Mask, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        OutStruct := this.GetTemplateDispInfo(Handle, false, UseCache)
+        OutStruct.mask := Mask
+        OutStruct.code := TVN_SETDISPINFOW
+        return SendMessage(WM_NOTIFY, OutStruct.idFrom, OutStruct.Ptr, this.Hwnd, this.HwndGui)
+    }
     SetAutoScrollInfo(PixelsPerSecond, RedrawInterval) => SendMessage(TVM_SETAUTOSCROLLINFO, PixelsPerSecond, RedrawInterval, this.Hwnd)
     SetBkColor(Color) => SendMessage(TVM_SETBKCOLOR, 0, Color, this.Hwnd)
     SetContextMenu(MenuExObj) {
@@ -1324,6 +1923,10 @@ class TreeViewEx {
                 WinSetStyle('-' TVS_CHECKBOXES, this.Hwnd)
             }
         }
+    }
+    CtrlId {
+        Get => DllCall(g_user32_GetDlgCtrlID, 'ptr', this.Hwnd, 'ptr')
+        Set => DllCall(g_user32_SetWindowLongPtrW, 'ptr', this.Hwnd, 'int', GWLP_ID, 'ptr', Value, 'int')
     }
     DimmedCheckboxes {
         Get => SendMessage(TVM_GETEXTENDEDSTYLE, 0, 0, this.Hwnd) & TVS_EX_DIMMEDCHECKBOXES
@@ -1577,6 +2180,16 @@ class TreeViewEx {
             } else {
                 WinSetStyle('-' TVS_SINGLEEXPAND, this.Hwnd)
             }
+        }
+    }
+    Templates {
+        Get {
+            this.DefineProp('Templates', { Value: TreeViewExCollection_Template(false) })
+            return this.Templates
+        }
+        Set {
+            this.DefineProp('Templates', { Value: Value })
+            return this.Templates
         }
     }
     TrackSelect {

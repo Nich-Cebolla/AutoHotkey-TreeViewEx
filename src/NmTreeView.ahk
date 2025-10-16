@@ -63,7 +63,15 @@ class NmTreeView extends TreeViewExStructBase {
         proto.offset_lParam_new          := 48 + A_PtrSize * 11
         proto.offset_x                   := 48 + A_PtrSize * 12
         proto.offset_y                   := 52 + A_PtrSize * 12
+
+        proto.__pszText_old := proto.__pszText_new := ''
     }
+    SetTextBuffer(Suffix, Bytes := TVEX_DEFAULT_TEXT_MAX) {
+        this.__pszText%Suffix% := Buffer(Bytes)
+        this.cchTextMax%Suffix% := Floor(Bytes / 2)
+        NumPut('ptr', this.__pszText%Suffix%.Ptr, this.Buffer, this.offset_pszText%Suffix%)
+    }
+
     hwndFrom {
         Get => NumGet(this.Buffer, this.offset_hwndFrom, 'ptr')
         Set {
@@ -128,19 +136,28 @@ class NmTreeView extends TreeViewExStructBase {
             }
         }
         Set {
-            if Type(Value) = 'String' {
-                if !this.HasOwnProp('__pszText_old')
-                || (this.__pszText_old is Buffer && this.__pszText_old.Size < StrPut(Value, TVEX_DEFAULT_ENCODING)) {
-                    this.__pszText_old := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
-                    NumPut('ptr', this.__pszText_old.Ptr, this.Buffer, this.offset_pszText_old)
-                }
-                StrPut(Value, this.__pszText_old, TVEX_DEFAULT_ENCODING)
-            } else if Value is Buffer {
-                this.__pszText_old := Value
-                NumPut('ptr', this.__pszText_old.Ptr, this.Buffer, this.offset_pszText_old)
+            if Value == LPSTR_TEXTCALLBACKW {
+                NumPut('ptr', Value, this.Buffer, this.offset_pszText_old)
             } else {
-                this.__pszText_old := Value
-                NumPut('ptr', this.__pszText_old, this.Buffer, this.offset_pszText_old)
+                if ptr := NumGet(this.Buffer, this.offset_pszText_old, 'ptr') {
+                    if this.__pszText_old {
+                        bytes := StrPut(Value, TVEX_DEFAULT_ENCODING)
+                        if bytes > this.__pszText_old.Size {
+                            this.__pszText_old.Size := bytes
+                            ptr := this.__pszText_old.Ptr
+                            NumPut('ptr', ptr, this.Buffer, this.offset_pszText_old)
+                        }
+                    }
+                } else {
+                    this.__pszText_old := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
+                    ptr := this.__pszText_old.Ptr
+                    NumPut('ptr', ptr, this.Buffer, this.offset_pszText_old)
+                }
+                if chars := this.cchTextMax_old {
+                    StrPut(SubStr(Value, 1, chars - 1), ptr, TVEX_DEFAULT_ENCODING)
+                } else {
+                    StrPut(Value, ptr, TVEX_DEFAULT_ENCODING)
+                }
             }
         }
     }
@@ -208,19 +225,28 @@ class NmTreeView extends TreeViewExStructBase {
             }
         }
         Set {
-            if Type(Value) = 'String' {
-                if !this.HasOwnProp('__pszText_new')
-                || (this.__pszText_new is Buffer && this.__pszText_new.Size < StrPut(Value, TVEX_DEFAULT_ENCODING)) {
-                    this.__pszText_new := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
-                    NumPut('ptr', this.__pszText_new.Ptr, this.Buffer, this.offset_pszText_new)
-                }
-                StrPut(Value, this.__pszText_new, TVEX_DEFAULT_ENCODING)
-            } else if Value is Buffer {
-                this.__pszText_new := Value
-                NumPut('ptr', this.__pszText_new.Ptr, this.Buffer, this.offset_pszText_new)
+            if Value == LPSTR_TEXTCALLBACKW {
+                NumPut('ptr', Value, this.Buffer, this.offset_pszText_new)
             } else {
-                this.__pszText_new := Value
-                NumPut('ptr', this.__pszText_new, this.Buffer, this.offset_pszText_new)
+                if ptr := NumGet(this.Buffer, this.offset_pszText_new, 'ptr') {
+                    if this.__pszText_new {
+                        bytes := StrPut(Value, TVEX_DEFAULT_ENCODING)
+                        if bytes > this.__pszText_new.Size {
+                            this.__pszText_new.Size := bytes
+                            ptr := this.__pszText_new.Ptr
+                            NumPut('ptr', ptr, this.Buffer, this.offset_pszText_new)
+                        }
+                    }
+                } else {
+                    this.__pszText_new := Buffer(StrPut(Value, TVEX_DEFAULT_ENCODING))
+                    ptr := this.__pszText_new.Ptr
+                    NumPut('ptr', ptr, this.Buffer, this.offset_pszText_new)
+                }
+                if chars := this.cchTextMax {
+                    StrPut(SubStr(Value, 1, chars - 1), ptr, TVEX_DEFAULT_ENCODING)
+                } else {
+                    StrPut(Value, ptr, TVEX_DEFAULT_ENCODING)
+                }
             }
         }
     }

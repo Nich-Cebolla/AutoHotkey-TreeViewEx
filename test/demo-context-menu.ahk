@@ -28,9 +28,10 @@ class TreeViewExContextMenu extends MenuEx {
           , { Name: 'Expand recursive', Value: 'SelectExpandRecursive' }
         ]
     }
-    ; When the context menu is activated, if the MenuEx object has a method "HandlerItemAvailability",
-    ; that method is called before showing to context menu. The method is intended to enable and disable
-    ; items as a function of what was underneath the mouse cursor when the context menu was activated,
+    ; When the context menu is activated, if the MenuEx object (an instance of this class is
+    ; a MenuEx object; it inherits from MenuEx) has a method "HandlerItemAvailability", that method
+    ; is called before showing to context menu. The method is intended to enable and disable items
+    ; as a function of what was underneath the mouse cursor when the context menu was activated,
     ; if anything.
     HandlerItemAvailability(Ctrl, IsRightClick, Item, X, Y) {
         items := this.__Item
@@ -49,10 +50,10 @@ class TreeViewExContextMenu extends MenuEx {
     }
     SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         if Item {
-            Ctrl.CollapseRecursive(Item || 0)
+            Ctrl.CollapseRecursiveNotify(Item || 0)
             return 'Collapsed from node: ' Ctrl.GetText(Item)
         } else {
-            Ctrl.CollapseRecursive(0)
+            Ctrl.CollapseRecursiveNotify(0)
             return 'Collapsed root nodes'
         }
     }
@@ -73,10 +74,10 @@ class TreeViewExContextMenu extends MenuEx {
     }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         if Item {
-            Ctrl.ExpandRecursive(Item || 0)
+            Ctrl.ExpandRecursiveNotify(Item || 0)
             return 'Expanded from node: ' Ctrl.GetText(Item)
         } else {
-            Ctrl.ExpandRecursive(0)
+            Ctrl.ExpandRecursiveNotify(0)
             return 'Expanded root nodes'
         }
     }

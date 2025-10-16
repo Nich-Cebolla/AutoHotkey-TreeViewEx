@@ -18,11 +18,13 @@ TreeViewEx_SetConstants(force := false) {
     g_msvcrt_memmove :=
     g_user32_CreateWindowExW :=
     g_user32_DestroyWindow :=
+    g_user32_GetDlgCtrlID :=
     g_user32_EnableWindow :=
     g_user32_GetDpiForWindow :=
     g_user32_IsWindowEnabled :=
     g_user32_IsWindowVisible :=
     g_user32_RedrawWindow :=
+    g_user32_SetWindowLongPtrW :=
     g_user32_SetWindowPos :=
     g_user32_ShowWindow :=
     0
@@ -30,12 +32,15 @@ TreeViewEx_SetConstants(force := false) {
     TreeViewEx.LibToken := LibraryManager(Map(
         'comctl32', [ 'DefSubclassProc' ]
       , 'msvcrt', [ 'memmove' ]
-      , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'EnableWindow', 'GetDpiForWindow', 'IsWindowEnabled', 'IsWindowVisible', 'RedrawWindow', 'SetWindowPos', 'ShowWindow' ]
+      , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'EnableWindow', 'GetDlgCtrlID'
+                  , 'GetDpiForWindow', 'IsWindowEnabled', 'IsWindowVisible', 'RedrawWindow'
+                  , 'SetWindowLongPtrW', 'SetWindowPos', 'ShowWindow' ]
       , 'gdi32', [ 'CreateFontIndirectW', 'GetObjectW', 'DeleteObject' ]
     ))
 
 	TVEX_DEFAULT_ENCODING                       := 'cp1200'
     TVEX_DEFAULT_TEXT_MAX                       := 256
+    TVEX_SENDNOTIFY_USECACHE                    := true
 
 	TV_FIRST                                    := 0x1100
 	TVN_FIRST                                   := -400
@@ -573,6 +578,20 @@ TreeViewEx_SetConstants(force := false) {
 	RASTER_FONTTYPE                             := 0x0001
 	DEVICE_FONTTYPE                             := 0x0002
 	TRUETYPE_FONTTYPE                           := 0x0004
+
+    ; https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptrw
+    ; GWL_WNDPROC                                 := -4
+    ; GWL_HINSTANCE                               := -6
+    ; GWL_HWNDPARENT                              := -8
+    ; GWL_STYLE                                   := -16
+    ; GWL_EXSTYLE                                 := -20
+    ; GWL_USERDATA                                := -21
+    ; GWL_ID                                      := -12
+    ; GWLP_WNDPROC                                := -4
+    ; GWLP_HINSTANCE                              := -6
+    ; GWLP_HWNDPARENT                             := -8
+    ; GWLP_USERDATA                               := -21
+    GWLP_ID                                     := -12
 
     tvex_flag_constants_set := 1
 }

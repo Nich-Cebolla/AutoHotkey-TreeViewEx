@@ -244,12 +244,11 @@ class DemoTreeViewEx_Node extends TreeViewEx_Node {
             case TVE_COLLAPSE, TVE_COLLAPSERESET:
                 ; Do nothing
             case TVE_EXPAND:
-                ; Add items
-                _struct := ctrl.GetTemplate('insert')
-                _struct.hParent := this.Handle
                 ; Check if children have already been added
                 if !this.flag_children {
                     ; Add children
+                    _struct := ctrl.GetTemplate('insert')
+                    _struct.hParent := this.Handle
                     for child in this.Value.Children {
                         ctrl.AddNode(_struct, child)
                     }

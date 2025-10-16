@@ -69,7 +69,7 @@ class TreeViewExContextMenu extends MenuEx {
         return 'Copied: ' text
     }
     SelectExpand(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.Expand(Item)
+        Ctrl.ExpandNotify(Item)
         return 'Expanded from node: ' Ctrl.GetText(Item)
     }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {

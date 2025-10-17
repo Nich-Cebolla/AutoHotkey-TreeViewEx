@@ -12,6 +12,8 @@ TreeViewEx_SetConstants(force := false) {
         return
     }
     g_comctl32_DefSubclassProc :=
+    g_comctl32_RemoveWindowSubclass :=
+    g_comctl32_SetWindowSubclass :=
     g_gdi32_CreateFontIndirectW :=
     g_gdi32_DeleteObject :=
     g_gdi32_GetObjectW :=
@@ -30,7 +32,7 @@ TreeViewEx_SetConstants(force := false) {
     0
 
     TreeViewEx.LibToken := LibraryManager(Map(
-        'comctl32', [ 'DefSubclassProc' ]
+        'comctl32', [ 'DefSubclassProc', 'RemoveWindowSubclass', 'SetWindowSubclass' ]
       , 'msvcrt', [ 'memmove' ]
       , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'EnableWindow', 'GetDlgCtrlID'
                   , 'GetDpiForWindow', 'IsWindowEnabled', 'IsWindowVisible', 'RedrawWindow'
@@ -402,6 +404,8 @@ TreeViewEx_SetConstants(force := false) {
     WM_GETFONT                                  := 0x0031
     ; https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-setfont
     WM_SETFONT                                  := 0x0030
+    ; https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-size
+    WM_SIZE                                     := 0x0005
 
     ; https://learn.microsoft.com/en-us/windows/win32/api/Winuser/nf-winuser-redrawwindow
     RDW_INVALIDATE                              := 0x0001

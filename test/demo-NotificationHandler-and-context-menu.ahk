@@ -426,7 +426,7 @@ class TreeViewExContextMenu extends MenuEx {
             { Name: 'Copy node ID', Value: 'SelectCopyNodeId' }
           , { Name: 'Copy value', Value: 'SelectCopyValue' }
           , { Name: 'Collapse recursive', Value: 'SelectCollapseRecursive' }
-          , { Name: 'Expand recursive notify', Value: 'SelectExpandRecursiveNotify' }
+          , { Name: 'Expand recursive notify', Value: 'SelectExpandRecursive' }
         ]
     }
     ; When the context menu is activated, if the MenuEx object (an instance of this class is
@@ -442,11 +442,9 @@ class TreeViewExContextMenu extends MenuEx {
         if Item {
             items.Get('Copy node ID').Enable()
             items.Get('Copy value').Enable()
-            items.Get('Expand').Enable()
         } else {
             items.Get('Copy node ID').Disable()
             items.Get('Copy value').Disable()
-            items.Get('Expand').Disable()
         }
     }
     SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {

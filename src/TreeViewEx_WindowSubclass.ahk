@@ -113,7 +113,7 @@ class TreeViewEx_WindowSubclass {
             this.__flag_callbackFree := 0
         }
         if !DllCall(
-            'Comctl32.Dll\SetWindowSubclass'
+            g_comctl32_SetWindowSubclass
           , 'ptr', this.Hwnd
           , 'ptr', this.pfnSubclass
           , 'ptr', this.uIdSubclass
@@ -176,7 +176,7 @@ class TreeViewEx_WindowSubclass {
             pfnSubclass := this.pfnSubclass
             this.pfnSubclass := 0
             if !DllCall(
-                'Comctl32.Dll\RemoveWindowSubclass'
+                g_comctl32_RemoveWindowSubclass
               , 'ptr', this.Hwnd
               , 'ptr', pfnSubclass
               , 'ptr', this.uIdSubclass

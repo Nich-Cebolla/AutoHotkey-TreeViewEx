@@ -47,6 +47,7 @@
  * {@link TreeViewEx#ParentSubclass}.
  */
 TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
+    Critical('Off')
     subclass := ObjFromPtrAddRef(dwRefData)
     switch uMsg {
         case WM_COMMAND:
@@ -98,7 +99,7 @@ TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, d
         g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass
       , 'uint', uMsg
-      , 'ptr', wParam
+      , 'uptr', wParam
       , 'ptr', lParam
       , 'ptr'
     )
@@ -108,14 +109,15 @@ TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, d
  * Destroys the TreeViewEx object when the control window is destroyed.
  */
 TreeViewEx_ControlSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
+    Critical('Off')
     if uMsg == WM_NCDESTROY {
         TreeViewEx.Get(HwndSubclass).Dispose()
     }
     return DllCall(
-        'comctl32\DefSubclassProc'
+        g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass
       , 'uint', uMsg
-      , 'ptr', wParam
+      , 'uptr', wParam
       , 'ptr', lParam
       , 'ptr'
     )
@@ -199,14 +201,15 @@ TreeViewEx_ParseColorRef(colorref, &OutR?, &OutG?, &OutB?) {
  * {@link TreeViewEx_LabelEditDestroyNotification.Prototype.__New}.
  */
 TreeViewEx_LabelEditSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
+    Critical('Off')
     if uMsg == WM_NCDESTROY {
         TreeViewEx_LabelEditDestroyNotification.Process(HwndSubclass)
     }
     return DllCall(
-        'comctl32\DefSubclassProc'
+        g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass
       , 'uint', uMsg
-      , 'ptr', wParam
+      , 'uptr', wParam
       , 'ptr', lParam
       , 'ptr'
     )

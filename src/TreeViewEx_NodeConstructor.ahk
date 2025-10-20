@@ -27,6 +27,12 @@
  * {@link TreeViewEx} object.
  */
 class TreeViewEx_NodeConstructor extends Class {
+    Call(Params*) {
+        obj := {}
+        ObjSetBase(obj, this.Prototype)
+        this.Prototype.__New.Call(obj, Params*)
+        return obj
+    }
     ProtoDefineProp(Name, Descriptor) {
         this.Prototype.DefineProp(Name, Descriptor)
     }

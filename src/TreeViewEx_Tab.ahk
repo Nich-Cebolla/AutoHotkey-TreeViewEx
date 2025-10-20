@@ -5,6 +5,11 @@
 
 
 class TreeViewEx_Tab {
+    static __New() {
+        this.DeleteProp('__New')
+        proto := this.Prototype
+        proto.NodeConstructor := ''
+    }
     /**
      * Creates a new {@link TreeViewEx_Tab} object. The purpose of {@link TreeViewEx_Tab} is to
      * create a tab control that's primary purpose is for displaying multiple {@link TreeViewEx}
@@ -28,9 +33,22 @@ class TreeViewEx_Tab {
      * @param {MenuEx} [Options.ContextMenu] - If set, an object that inherits from {@link MenuEx}.
      * See the demo file test\demo-context-menu.ahk for an example context menu. The context
      * menu can be added to new {@link TreeViewEx} controls. Also see option
-     * {@link TreeViewEx_Tab.Prototype.Add~AddOptions.SetContextMenu}.
+     * {@link TreeViewEx_Tab.Prototype.Add~AddOptions.SetContextMenu} which is `true` by default.
      *
      * @param {String} [Options.Name] - If set, the name assigned to the tab control.
+     *
+     * @param {Class} [Options.NodeClass] - If set, the node class that will be passed to
+     * {@link TreeViewEx.Prototype.SetNodeConstructor}. By providing the node class with this option,
+     * this enables the ability to make changes that effect all node objects associated with all
+     * {@link TreeViewEx} objects associated with this {@link TreeViewEx_Tab}. This is done
+     * through the {@link TreeViewEx_Tab#NodeConstructor} property, which is an instance of
+     * {@link TreeViewEx_NodeConstructor}. You can use the {@link TreeViewEx_NodeConstructor}
+     * instance methods to make changes to the prototype object from which all nodes associated
+     * with this {@link TreeViewEx_Tab} inherit. These changes would not be seen on other node
+     * objects or other {@link TreeViewEx} objects which are NOT associated with this {@link TreeViewEx_Tab}.
+     *
+     * Also see {@link TreeViewEx_Tab.Prototype.Add~AddOptions.SetNodeConstructor} which is `true`
+     * by default.
      *
      * @param {String} [Options.Opt = "w100 h100"] - The options to pass to the first parameter
      * of {@link https://www.autohotkey.com/docs/v2/lib/Gui.htm#Add Gui.Prototype.Add} when creating
@@ -67,6 +85,9 @@ class TreeViewEx_Tab {
         this.Tab.OnEvent('Change', TreeViewEx_Tab_OnChange)
         this.Tab.UseTab()
         this.ActiveControls := []
+        if options.NodeClass {
+            this.SetNodeConstructor(options.NodeClass)
+        }
     }
     /**
      * Adds a {@link TreeViewEx} control to the gui, optionally creating a new tab. This returns
@@ -99,9 +120,17 @@ class TreeViewEx_Tab {
      *
      * @param {Boolean} [AddOptions.SetContextMenu = true] - If true, and if a value is set to
      * {@link TreeViewEx_Tab#ContextMenu} (usually by including it with
-     * {@link TreeViewEx_Tab.Prototype.__New~Options}), this calls {@link TreeViewEx.Prototype.SetContextMenu}
-     * with {@link TreeViewEx_Tab#ContextMenu}. If false or if {@link TreeViewEx_Tab#ContextMenu}
-     * is not set with a value, this does not occur.
+     * {@link TreeViewEx_Tab.Prototype.__New~Options.ContextMenu}), this calls
+     * {@link TreeViewEx.Prototype.SetContextMenu}
+     * passing {@link TreeViewEx_Tab#ContextMenu} as the argument. If false or if
+     * {@link TreeViewEx_Tab#ContextMenu} is not set with a value, this does not occur.
+     *
+     * @param {Boolean} [AddOptions.SetNodeConstructor = true] - If true, and if a value is set to
+     * {@link TreeViewEx_Tab#NodeConstructor} (usually by including it with
+     * {@link TreeViewEx_Tab.Prototype.__New~Options.NodeClass}), this calls
+     * {@link TreeViewEx.Prototype.SetNodeConstructor}
+     * passing {@link TreeViewEx_Tab#NodeConstructor} as the argument. If false or if
+     * {@link TreeViewEx_Tab#NodeConstructor} is not set with a value, this does not occur.
      *
      * @param {Integer|String} [AddOptions.UseTab] - If set, and if `AddOptions.CreateTab` is not in use,
      * the {@link TreeViewEx} control is associated with `AddOptions.UseTab`. `AddOptions.UseTab`
@@ -216,6 +245,9 @@ class TreeViewEx_Tab {
         if addOptions.SetContextMenu && this.ContextMenu {
             tvex.SetContextMenu(this.ContextMenu)
         }
+        if addOptions.SetNodeConstructor && IsObject(this.NodeConstructor) {
+            tvex.SetNodeConstructor(this.NodeConstructor)
+        }
         if IsObject(this.Callback) {
             this.Callback.Call(tvex, this)
         }
@@ -302,6 +334,11 @@ class TreeViewEx_Tab {
      * @returns {Integer}
      */
     Has(Name) => this.Collection.Find(Name)
+    SetNodeConstructor(NodeClass) {
+        this.NodeConstructor := TreeViewEx_NodeConstructor()
+        this.NodeConstructor.Prototype := { __Class: NodeClass.Prototype.__Class }
+        ObjSetBase(this.NodeConstructor.Prototype, NodeClass.Prototype)
+    }
     __Delete() {
         if this.HasOwnProp('Tab') && this.Tab.HasOwnProp('TvexTab') && this = this.Tab.TvexTab {
             ObjPtrAddRef(this)
@@ -320,6 +357,7 @@ class TreeViewEx_Tab {
           , CreateTab: true
           , FitTab: true
           , SetContextMenu: true
+          , SetNodeConstructor: true
           , UseTab: ''
           , UseTabCaseSense: true
         }
@@ -398,6 +436,7 @@ class TreeViewEx_Tab {
           , CaseSense: false
           , ContextMenu: ''
           , Name: ''
+          , NodeClass: ''
           , Opt: 'w100 h100'
           , Tabs: ''
           , Which: 'Tab3'

@@ -35,8 +35,7 @@ An AutoHotkey (AHK) library that extends the built-in tree-view control function
 
 - [`ImageList`:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GDI/ImageList.ahk)
 Create an `ImageList` from an array of file paths or an array of bitmap pointers. For use with
-`TreeViewEx.Prototype.SetImageList` and related methods. For a usage example, see
-test\test-ImageList.ahk. Requires several dependencies from the same
+`TreeViewEx.Prototype.SetImageList` and related methods. Requires several dependencies from the same
 [repository](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/).
 - [`Logfont`:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Logfont.ahk)
 A full-featured font object. `TreeViewEx` has a built-in
@@ -189,7 +188,7 @@ None.
 |  ------------------------|-----------  |
 |  __New                   |      X      |
 |  AddNode                 |      X      |
-|  AddNode_C               |      X      |
+|  AddNode_C               |             |
 |  AddObj                  |      X      |
 |  AddObjList              |      X      |
 |  AddObjListFromTemplate  |      X      |
@@ -199,7 +198,7 @@ None.
 |  CollapseRecursive       |      X      |
 |  CollapseRecursiveNotify |      X      |
 |  CollapseReset           |             |
-|  CollapseReset           |             |
+|  CollapseResetNotify     |             |
 |  CopyItemId              |             |
 |  CopyText                |             |
 |  CreateDragImage         |             |

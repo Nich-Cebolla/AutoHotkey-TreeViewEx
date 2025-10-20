@@ -1916,7 +1916,7 @@ class TreeViewEx {
     SetItemHeight(Height) => SendMessage(TVM_SETITEMHEIGHT, Height, 0, this.Hwnd)
     SetLineColor(Color) => SendMessage(TVM_SETLINECOLOR, 0, Color, this.Hwnd)
     SetNodeConstructor(NodeClass) {
-        this.Constructor := Class()
+        this.Constructor := TreeViewEx_NodeConstructor()
         this.Constructor.Base := NodeClass
         this.Constructor.Prototype := {
             HwndCtrl: this.Hwnd

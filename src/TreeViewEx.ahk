@@ -252,7 +252,7 @@ class TreeViewEx {
      * of the context of a WM_NOTIFY handler. If your code only accesses the nodes from within
      * the context of the WM_NOTIFY handlers, using this method will be more efficient.
      *
-     * If you use `SetParam`, your code must set a TVN_DELETEITEMW handler that includes calling
+     * If you use this, your code must set a TVN_DELETEITEMW handler that includes calling
      * `ObjRelease(struct.lParam)` to allow the node object to be deleted. The demo file
      * {@link Demo "test\demo-NotificationHandlers.ahk"} has an example of this.
      *

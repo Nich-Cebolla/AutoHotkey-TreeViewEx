@@ -48,7 +48,7 @@ class Demo {
         tvex.OnNotify(NM_CLICK, TreeViewEx_OnClick)
 
         ; Set the context menu.
-        tvex.SetContextMenu(TreeViewExContextMenu(, { ShowTooltips: true }))
+        tvex.SetContextMenu(TreeViewEx_ContextMenu(, { ShowTooltips: true }))
 
         ; Example object which defines the node structure.
         this.list := TreeViewExDemo_GetObj()

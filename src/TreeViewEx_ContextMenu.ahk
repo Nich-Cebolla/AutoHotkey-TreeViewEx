@@ -3,7 +3,7 @@
 ; https://github.com/Nich-Cebolla/AutoHotkey-MenuEx
 #include <MenuEx>
 
-class TreeViewExContextMenu extends MenuEx {
+class TreeViewEx_ContextMenu extends MenuEx {
     static __New() {
         this.DeleteProp('__New')
         this.Prototype.DefaultItems := [

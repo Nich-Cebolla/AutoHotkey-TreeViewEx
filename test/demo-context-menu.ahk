@@ -123,7 +123,7 @@ class demo_ContextMenu {
         tvex := this.tvex := TreeViewEx(g, { Width: 300, Rows: 17 })
 
         ; Add the context menu, with ShowTooltips enabled.
-        tvex.SetContextMenu(TreeViewExContextMenu(, { ShowTooltips: true }))
+        tvex.SetContextMenu(TreeViewEx_ContextMenu(, { ShowTooltips: true }))
 
         ; Add the nodes
         tvex.AddObjList(Obj)

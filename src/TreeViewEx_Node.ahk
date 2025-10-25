@@ -90,6 +90,7 @@ class TreeViewEx_Node {
     MapHTreeItemToAccId() => SendMessage(TVM_MAPHTREEITEMTOACCID, this.Handle, 0, this.HwndCtrl)
     Select() => SendMessage(TVM_SELECTITEM, TVGN_CARET, this.Handle, this.HwndCtrl)
     SetHandle(Handle) => this.Handle := Handle
+    SetLabel(Text) => this.Ctrl.SetLabel(Text, this.Handle)
     SetInsertMark(AfterItem := false) => SendMessage(TVM_SETINSERTMARK, AfterItem, this.Handle, this.HwndCtrl)
     SetTreeView(Hwnd) {
         this.HwndCtrl := Hwnd

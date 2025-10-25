@@ -219,10 +219,9 @@ TreeViewEx_LabelEditSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass
  * Deselects any selected items when the mouse is not on-top of an item.
  */
 TreeViewEx_OnClick(tvex, *) {
-    if hitTestInfo := tvex.HitTest() {
-        if !hitTestInfo.hItem {
-            tvex.Select(0)
-        }
+    hitTestInfo := tvex.HitTest()
+    if !hitTestInfo || !hitTestInfo.hItem || !hitTestInfo.OnItemGeneral {
+        tvex.Select(0)
     }
 }
 

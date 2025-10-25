@@ -10,8 +10,8 @@ class TreeViewEx {
     static __New() {
         this.DeleteProp('__New')
         proto := this.Prototype
-        proto.Constructor := proto.Collection := proto.ParentSubclass := proto.Subclass :=
-        proto.CallbackOnExit := ''
+        proto.NodeConstructor := proto.Collection := proto.ParentSubclass := proto.Subclass :=
+        proto.CallbackOnExit := proto.ContextMenu := ''
         if !IsSet(TVS_HASBUTTONS) {
             TreeViewEx_SetConstants()
         }
@@ -265,7 +265,7 @@ class TreeViewEx {
         if !IsObject(Struct) {
             Struct := this.Templates.Get(Struct)
         }
-        global g_TreeViewEx_Node := this.Constructor.Call(Params*)
+        global g_TreeViewEx_Node := this.NodeConstructor.Call(Params*)
         local node := g_TreeViewEx_Node
         Struct.lParam := ObjPtrAddRef(node)
         if handle := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
@@ -300,7 +300,7 @@ class TreeViewEx {
         if !IsObject(Struct) {
             Struct := this.Templates.Get(Struct)
         }
-        global g_TreeViewEx_Node := this.Constructor.Call(Params*)
+        global g_TreeViewEx_Node := this.NodeConstructor.Call(Params*)
         local node := g_TreeViewEx_Node
         if SetParam {
             Struct.lParam := ObjPtrAddRef(node)
@@ -1148,7 +1148,7 @@ class TreeViewEx {
      * (if the collection has been created).
      */
     GetNode(Handle) {
-        node := this.Constructor.Call(Handle)
+        node := this.NodeConstructor.Call(Handle)
         if IsObject(this.Collection) {
             this.Collection.Set(Handle, node)
         }
@@ -1840,6 +1840,9 @@ class TreeViewEx {
     SetBkColor(Color) => SendMessage(TVM_SETBKCOLOR, 0, Color, this.Hwnd)
     SetContextMenu(MenuExObj) {
         if IsSet(MenuEx) && MenuExObj is MenuEx {
+            if this.ContextMenuActive {
+                this.ParentSubclass.MessageDelete(WM_CONTEXTMENU)
+            }
             this.OnMessage(WM_CONTEXTMENU, TreeViewEx_HandlerContextMenu)
             this.ContextMenu := MenuExObj
         } else {
@@ -1914,14 +1917,27 @@ class TreeViewEx {
         return SendMessage(TVM_SETITEMW, 0, struct.Ptr, this.Hwnd)
     }
     SetItemHeight(Height) => SendMessage(TVM_SETITEMHEIGHT, Height, 0, this.Hwnd)
+    SetLabel(Text, Handle?) {
+        if !IsSet(Handle) {
+            Handle := this.GetSelected()
+            if !Handle {
+                throw Error('No item is currently selected.')
+            }
+        }
+        item := TvItem()
+        item.mask := TVIF_TEXT
+        item.hItem := Handle
+        item.pszText := Text
+        return SendMessage(TVM_SETITEMW, 0, item.Ptr, this.Hwnd)
+    }
     SetLineColor(Color) => SendMessage(TVM_SETLINECOLOR, 0, Color, this.Hwnd)
     SetNodeConstructor(NodeClass) {
-        this.Constructor := TreeViewEx_NodeConstructor()
-        this.Constructor.Prototype := {
+        this.NodeConstructor := TreeViewEx_NodeConstructor()
+        this.NodeConstructor.Prototype := {
             HwndCtrl: this.Hwnd
           , __Class: NodeClass.Prototype.__Class
         }
-        ObjSetBase(this.Constructor.Prototype, NodeClass.Prototype)
+        ObjSetBase(this.NodeConstructor.Prototype, NodeClass.Prototype)
         this.Collection := TreeViewExCollection_Node()
     }
     /**
@@ -2000,6 +2016,7 @@ class TreeViewEx {
             }
         }
     }
+    ContextMenuActive => this.ContextMenu && this.HasOwnProp('ParentSubclass') && this.ParentSubclass.MessageGet(WM_CONTEXTMENU)
     CtrlId {
         Get => DllCall(g_user32_GetDlgCtrlID, 'ptr', this.Hwnd, 'ptr')
         Set => DllCall(g_user32_SetWindowLongPtrW, 'ptr', this.Hwnd, 'int', GWLP_ID, 'ptr', Value, 'int')

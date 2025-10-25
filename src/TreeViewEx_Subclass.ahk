@@ -30,6 +30,17 @@ class TreeViewEx_Subclass {
             case -1: collectionCallback.InsertAt(1, Callback)
         }
     }
+    CommandAdd(CommandCode, Callback, AddRemove := true) {
+        this.Add('Command', CommandCode, Callback, AddRemove)
+    }
+    CommandDelete(CommandCode, Callback?) {
+        this.Delete('Command', CommandCode, Callback ?? unset)
+    }
+    CommandGet(Code) {
+        if this.CommandCollection.Find(Code, &collectionCallback) {
+            return collectionCallback
+        }
+    }
     Delete(Name, Code, Callback?) {
         Collection := this.%Name%Collection
         if IsSet(Callback) {
@@ -63,17 +74,6 @@ class TreeViewEx_Subclass {
                 collection.Length := 0
                 this.DeleteProp(name 'Collection')
             }
-        }
-    }
-    CommandAdd(CommandCode, Callback, AddRemove := true) {
-        this.Add('Command', CommandCode, Callback, AddRemove)
-    }
-    CommandDelete(CommandCode, Callback?) {
-        this.Delete('Command', CommandCode, Callback ?? unset)
-    }
-    CommandGet(Code) {
-        if this.CommandCollection.Find(Code, &collectionCallback) {
-            return collectionCallback
         }
     }
     MessageAdd(MessageCode, Callback, AddRemove := true) {

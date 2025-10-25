@@ -10,13 +10,13 @@
  *
  * @example
  * SetNodeConstructor(NodeClass) {
- *     this.Constructor := TreeViewEx_NodeConstructor()
- *     this.Constructor.Base := NodeClass
- *     this.Constructor.Prototype := {
+ *     this.NodeConstructor := TreeViewEx_NodeConstructor()
+ *     this.NodeConstructor.Base := NodeClass
+ *     this.NodeConstructor.Prototype := {
  *         HwndCtrl: this.Hwnd
  *       , __Class: NodeClass.Prototype.__Class
  *     }
- *     ObjSetBase(this.Constructor.Prototype, NodeClass.Prototype)
+ *     ObjSetBase(this.NodeConstructor.Prototype, NodeClass.Prototype)
  *     this.Collection := TreeViewExCollection_Node()
  * }
  * @

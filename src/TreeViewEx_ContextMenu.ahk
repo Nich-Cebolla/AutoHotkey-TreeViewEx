@@ -6,7 +6,6 @@
 class TreeViewEx_ContextMenu extends MenuEx {
     static __New() {
         this.DeleteProp('__New')
-        this.Prototype.DefaultItems := [
         this.Prototype.DefaultItems := TreeViewExCollection_ContextMenuItem(
             /**
                 Only the "Name" and "Value" are required. Other properties are "Options", which are the
@@ -33,7 +32,6 @@ class TreeViewEx_ContextMenu extends MenuEx {
           , { Name: 'Select parent (&W)', Value: 'SelectSelectParent' }
           , { Name: 'Select previous sibling (&Q)', Value: 'SelectSelectPreviousSibling' }
           , { Name: 'Select next sibling (&E)', Value: 'SelectSelectNextSibling' }
-        ]
         )
     }
     ; When the context menu is activated, if the MenuEx object (an instance of this class is

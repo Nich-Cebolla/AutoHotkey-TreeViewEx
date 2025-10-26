@@ -734,9 +734,9 @@ class TreeViewEx {
     }
     /**
      * @param {Integer} [Handle = 0] - The handle of the item for which its children will be enumerated.
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
+     * @param {Integer} [MaxDepth = TVEX_MAX_RECURSION] - The maximum depth to expand.
      */
-    EnumChildrenRecursive(Handle := 0, MaxDepth := 0) {
+    EnumChildrenRecursive(Handle := 0, MaxDepth := TVEX_MAX_RECURSION) {
         enum := { Child: SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd), Stack: [], Parent: Handle }
         if MaxDepth > 0 {
             enum.DefineProp('Call', { Call: _EnumMaxDepth })
@@ -834,9 +834,9 @@ class TreeViewEx {
     }
     /**
      * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
+     * @param {Integer} [MaxDepth = TVEX_MAX_RECURSION] - The maximum depth to expand.
      */
-    ExpandRecursive(Handle := 0, MaxDepth := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+    ExpandRecursive(Handle := 0, MaxDepth := TVEX_MAX_RECURSION, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         if Handle {
             if MaxDepth > 0 {
                 depth := 0
@@ -1022,9 +1022,9 @@ class TreeViewEx {
      *   - Sends TVN_ITEMEXPANDEDW with TVE_EXPAND.
      *
      * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
+     * @param {Integer} [MaxDepth = TVEX_MAX_RECURSION] - The maximum depth to expand.
      */
-    ExpandRecursiveNotify(Handle := 0, MaxDepth := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+    ExpandRecursiveNotify(Handle := 0, MaxDepth := TVEX_MAX_RECURSION, UseCache := TVEX_SENDNOTIFY_USECACHE) {
         if Handle {
             if MaxDepth > 0 {
                 depth := 0

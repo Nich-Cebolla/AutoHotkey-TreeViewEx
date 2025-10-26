@@ -1092,109 +1092,153 @@ class TreeViewEx {
         }
     }
     /**
+     * - Sends TVN_ITEMEXPANDINGW with TVE_EXPAND. If the return value is zero or an empty string:
+     *   - Sends TVM_EXPAND with TVE_EXPAND.
+     *   - Sends TVN_ITEMEXPANDEDW with TVE_EXPAND.
+     *
      * @param {*} Callback - A `Func` or callable object that is called to determine if a node should
-     * be expanded.
+     * be expanded. The callback does not get called for `Handle`.
      * - Parameters:
      *   1. {Integer} The tree-view item handle.
      *   2. {Integer} The handle to the parent item of #1.
-     *   3. {Integer} The current depth (children of `Handle` are depth 1).
+     *   3. {Integer} The depth at which the tree-view item associated with parameter 1 is located.
+     *      Children of `Handle` are depth 1.
      *   4. {TreeViewEx} The {@link TreeViewEx} object.
-     * - The function should return one of the following integers:
-     *   - 0 : Do not expand the node and move on to the next sibling node.
-     *   - 1 : Expand the node and iterate the node's children.
-     *   - 2 : Expand the node but do not iterate the node's children, move on to the next sibling node.
+     * - The function should return one of the following:
+     *   - 0 (or an empty string) : Expand the node and iterate the node's children.
+     *   - 1 : Expand the node but do not iterate the node's children, move on to the next sibling node.
+     *   - 2 : Expand the node and end the function call. {@link TreeViewEx.Prototype.ExpandRecursiveNotifySelective}
+     *     returns `2` to the caller.
+     *   - 3 : Do not expand the node and move on to the next sibling node.
+     *   - Any other number : Do not expand the node and end the function call.
+     *    {@link TreeViewEx.Prototype.ExpandRecursiveNotifySelective} returns the number to the caller.
      *
-     * @param {Integer} [Handle = 0] - The node to expand. If 0, the root nodes are iterated and
-     * expanded, depending on the return value from `Callback`.
+     * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
      *
-     * @param {Integer} [MaxDepth = 0] - The maximum depth to expand.
+     * @returns {Integer} - One of the following:
+     * - 0 : If `Callback` never returned `2` or `4`.
+     * - 2 : If `Callback` returned `2`.
+     * - 4 : If `Callback` returned `4`.
      */
-    ExpandRecursiveSelective(Callback, Handle := 0, MaxDepth := 0) {
-        depth := 0
-        item := TvItem()
-        item.mask := TVIF_CHILDREN
-        SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
-        if MaxDepth > 0 {
-            _RecurseMaxDepth(Handle)
-        } else {
+    ExpandRecursiveNotifySelective(Callback, Handle := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        flag_unwind := false
+        if Handle {
+            depth := 0
             _Recurse(Handle)
+        } else {
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
+                depth := 1
+                result := Callback(child, Handle, depth, this)
+                switch result, 0 {
+                    case 0, '': _Recurse(child)
+                    case 1:
+                        if this.HasChildren(child, UseCache) {
+                            if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                this.SendItemExpanded(Struct)
+                            }
+                        }
+                    case 2:
+                        if this.HasChildren(child, UseCache) {
+                            if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                this.SendItemExpanded(Struct)
+                            }
+                        }
+                        return 2
+                    case 3: ; do nothing
+                    default: return result
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    result := Callback(child, Handle, depth, this)
+                    switch result, 0 {
+                        case 0, '': _Recurse(child)
+                        case 1:
+                            if this.HasChildren(child, UseCache) {
+                                if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                    SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                    this.SendItemExpanded(Struct)
+                                }
+                            }
+                        case 2:
+                            if this.HasChildren(child, UseCache) {
+                                if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                    SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                    this.SendItemExpanded(Struct)
+                                }
+                            }
+                            return 2
+                        case 3: ; do nothing
+                        default: return result
+                    }
+                }
+            }
         }
 
-        return
+        return flag_unwind
 
         _Recurse(Handle) {
             local child
             depth++
-            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
-                item.hItem := child
-                if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
-                    throw OSError()
+            if this.HasChildren(Handle, UseCache) {
+                if !this.SendItemExpanding(Handle, TVE_EXPAND, &Struct, UseCache) {
+                    SendMessage(TVM_EXPAND, TVE_EXPAND, Handle, this.Hwnd)
+                    this.SendItemExpanded(Struct)
                 }
-                if item.cChildren {
-                    switch Callback(child, Handle, depth, this), 0 {
-                        case 0: ; do nothing
-                        case 1:
-                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                            _Recurse(child)
-                        case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                    }
+            }
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                result := Callback(child, Handle, depth, this)
+                switch result, 0 {
+                    case 0, '': _Recurse(child)
+                    case 1:
+                        if this.HasChildren(child, UseCache) {
+                            if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                this.SendItemExpanded(Struct)
+                            }
+                        }
+                    case 2:
+                        if this.HasChildren(child, UseCache) {
+                            if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                this.SendItemExpanded(Struct)
+                            }
+                        }
+                        flag_unwind := 2
+                    case 3: ; do nothing
+                    default: flag_unwind := result
                 }
                 while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
-                    item.hItem := child
-                    if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
-                        throw OSError()
+                    if flag_unwind {
+                        return
                     }
-                    if item.cChildren {
-                        switch Callback(child, Handle, depth, this), 0 {
-                            case 0: ; do nothing
-                            case 1:
-                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                                _Recurse(child)
-                            case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                        }
+                    result := Callback(child, Handle, depth, this)
+                    switch result, 0 {
+                        case 0, '': _Recurse(child)
+                        case 1:
+                            if this.HasChildren(child, UseCache) {
+                                if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                    SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                    this.SendItemExpanded(Struct)
+                                }
+                            }
+                        case 2:
+                            if this.HasChildren(child, UseCache) {
+                                if !this.SendItemExpanding(child, TVE_EXPAND, &Struct, UseCache) {
+                                    SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                                    this.SendItemExpanded(Struct)
+                                }
+                            }
+                            flag_unwind := 2
+                        case 3: ; do nothing
+                        default: flag_unwind := result
                     }
                 }
             }
             depth--
         }
-        _RecurseMaxDepth(Handle) {
-            local child
-            depth++
-            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
-                item.hItem := child
-                if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
-                    throw OSError()
-                }
-                if item.cChildren {
-                    switch Callback(child, Handle, depth, this), 0 {
-                        case 0: ; do nothing
-                        case 1:
-                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                            if depth < MaxDepth {
-                                _RecurseMaxDepth(child)
-                            }
-                        case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                    }
-                }
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
-                    item.hItem := child
-                    if !SendMessage(TVM_GETITEMW, 0, item.Ptr, this.Hwnd) {
-                        throw OSError()
-                    }
-                    if item.cChildren {
-                        switch Callback(child, Handle, depth, this), 0 {
-                            case 0: ; do nothing
-                            case 1:
-                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                                if Depth < MaxDepth {
-                                    _RecurseMaxDepth(child)
-                                }
-                            case 2: SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                        }
-                    }
-                }
-            }
-            depth--
+        _Throw() {
+            throw Error('Sending message ``TVM_GETITEMW`` failed.', -1)
         }
     }
     ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, Handle, this.Hwnd)

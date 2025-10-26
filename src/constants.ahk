@@ -43,6 +43,7 @@ TreeViewEx_SetConstants(force := false) {
 	TVEX_DEFAULT_ENCODING                       := 'cp1200'
     TVEX_DEFAULT_TEXT_MAX                       := 256
     TVEX_SENDNOTIFY_USECACHE                    := true
+    TVEX_MAX_RECURSION                          := 7
 
 	TV_FIRST                                    := 0x1100
 	TVN_FIRST                                   := -400

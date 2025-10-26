@@ -848,7 +848,7 @@ class TreeViewEx {
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
                 if MaxDepth > 0 {
                     depth := 0
-                    _RecurseMaxDepth(Handle)
+                    _RecurseMaxDepth(child)
                     while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
                         _RecurseMaxDepth(child)
                     }
@@ -1036,7 +1036,7 @@ class TreeViewEx {
             if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
                 if MaxDepth > 0 {
                     depth := 0
-                    _RecurseMaxDepth(Handle)
+                    _RecurseMaxDepth(child)
                     while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
                         _RecurseMaxDepth(child)
                     }

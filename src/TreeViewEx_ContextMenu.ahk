@@ -114,14 +114,8 @@ class TreeViewEx_ContextMenu extends MenuEx {
         return 'Copied: ' text
     }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        if Item {
-            ; Use the Notify version
-            Ctrl.ExpandRecursiveNotify(Item || 0)
-            return 'Expanded from node: ' Ctrl.GetText(Item)
-        } else {
-            Ctrl.ExpandRecursiveNotify(0)
-            return 'Expanded root nodes'
-        }
+        Ctrl.ExpandRecursiveNotify(Item)
+        return 'Expanded from node: ' Ctrl.GetText(Item)
     }
     SelectSelectParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd)

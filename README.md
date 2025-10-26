@@ -260,175 +260,189 @@ only the marked items have been verified.
 
 ## TreeViewEx: Static methods
 
-|  Name                    |  Is Tested  |
-|  ------------------------|-----------  |
-|  Add                     |      X      |
-|  Delete                  |      X      |
-|  Get                     |      X      |
+|  Name                              |  Is Tested  |
+|  ----------------------------------|-----------  |
+|  Add                               |      X      |
+|  Delete                            |      X      |
+|  Get                               |      X      |
 
 ## TreeViewEx: Instance methods
 
-|  Name                    |  Is Tested  |
-|  ------------------------|-----------  |
-|  __New                   |      X      |
-|  AddNode                 |      X      |
-|  AddNode_C               |             |
-|  AddObj                  |      X      |
-|  AddObjList              |      X      |
-|  AddObjListFromTemplate  |      X      |
-|  AddTemplate             |      X      |
-|  Collapse                |      X      |
-|  CollapseNotify          |      X      |
-|  CollapseRecursive       |      X      |
-|  CollapseRecursiveNotify |      X      |
-|  CollapseReset           |             |
-|  CollapseResetNotify     |             |
-|  CopyItemId              |             |
-|  CopyText                |             |
-|  CreateDragImage         |             |
-|  DeleteAll               |      X      |
-|  DeleteItem              |      X      |
-|  DeleteNode_C            |             |
-|  Destroy                 |      X      |
-|  Dispose                 |      X      |
-|  EditLabel               |      X      |
-|  EditSelectedLabel       |      X      |
-|  EndEditLabel            |      X      |
-|  EnsureVisible           |      X      |
-|  EnumChildren            |      X      |
-|  EnumChildrenRecursive   |      X      |
-|  Expand                  |      X      |
-|  ExpandNotify            |      X      |
-|  ExpandPartial           |             |
-|  ExpandRecursive         |      X      |
-|  ExpandRecursiveNotify   |      X      |
-|  GetBkColor              |             |
-|  GetEditControl          |      X      |
-|  GetExtendedStyle        |             |
-|  GetFont                 |             |
-|  GetImageList            |             |
-|  GetIndent               |             |
-|  GetInsertMarkColor      |             |
-|  GetISearchString        |             |
-|  GetItem                 |      X      |
-|  GetItemHeight           |      X      |
-|  GetItemRect             |      X      |
-|  GetItemState            |             |
-|  GetLineColor            |             |
-|  GetLineRect             |             |
-|  GetNext                 |      X      |
-|  GetChild                |      X      |
-|  GetNode                 |      X      |
-|  GetNode_C               |      X      |
-|  GetNode_Ptr             |             |
-|  GetParent               |             |
-|  GetPos                  |             |
-|  GetRoot                 |             |
-|  GetScrollTime           |             |
-|  GetSelected             |      X      |
-|  GetTemplate             |      X      |
-|  GetTemplateDispInfo     |             |
-|  GetTemplateInfoTip      |             |
-|  GetTemplateItemChange   |             |
-|  GetTemplateKeyDown      |             |
-|  GetTemplateNmtv         |      X      |
-|  GetText                 |      X      |
-|  GetTextColor            |             |
-|  GetTooltips             |             |
-|  GetVisibleCount         |             |
-|  Hide                    |      X      |
-|  HasChildren             |      X      |
-|  HitTest                 |      X      |
-|  Insert                  |      X      |
-|  IsExpanded              |             |
-|  IsRoot                  |             |
-|  IsAncestor              |             |
-|  MapAccIdToHTreeItem     |             |
-|  MapHTreeItemToAccId     |             |
-|  OnCommand               |             |
-|  OnMessage               |      X      |
-|  OnNotify                |      X      |
-|  Select                  |      X      |
-|  SendBeginDrag           |             |
-|  SendBeginLabelEdit      |      X      |
-|  SendBeginRDrag          |             |
-|  SendDeleteItem          |             |
-|  SendEndLabelEdit        |      X      |
-|  SendGetDispInfo         |             |
-|  SendGetInfoTip          |             |
-|  SendItemChanged         |             |
-|  SendItemChanging        |             |
-|  SendItemExpanded        |      X      |
-|  SendItemExpanding       |      X      |
-|  SendKeyDown             |             |
-|  SendSetDispInfo         |             |
-|  SetAutoScrollInfo       |             |
-|  SetBkColor              |             |
-|  SetContextMenu          |      X      |
-|  SetExtendedStyle        |             |
-|  SetImageList            |             |
-|  SetIndent               |             |
-|  SetInsertMark           |             |
-|  SetInsertMarkColor      |             |
-|  SetItem                 |      X      |
-|  SetItemHeight           |             |
-|  SetLineColor            |             |
-|  SetNodeConstructor      |      X      |
-|  SetScrollTime           |             |
-|  SetTextColor            |             |
-|  SetTooltips             |             |
-|  Show                    |      X      |
-|  ShowInfoTip             |             |
-|  SortChildren            |             |
-|  SortChildrenCb          |             |
-|  Toggle                  |             |
-|  __Delete                |             |
-|  __SetHandler            |             |
-|  __SetHandlerDispInfo    |             |
+|  Name                              |  Is Tested  |
+|  ----------------------------------|-----------  |
+|  __New                             |      X      |
+|  AddNode                           |      X      |
+|  AddNode_C                         |             |
+|  AddObj                            |      X      |
+|  AddObjList                        |      X      |
+|  AddObjListFromTemplate            |      X      |
+|  AddTemplate                       |      X      |
+|  Collapse                          |      X      |
+|  CollapseNotify                    |      X      |
+|  CollapseRecursive                 |      X      |
+|  CollapseRecursiveNotify           |      X      |
+|  CollapseReset                     |             |
+|  CollapseResetNotify               |             |
+|  CopyText                          |      X      |
+|  CreateDragImage                   |             |
+|  CreateParentSubclass              |      X      |
+|  DeleteAll                         |      X      |
+|  DeleteAll_C                       |      X      |
+|  DeleteChildren                    |      X      |
+|  DeleteCommandCode                 |      X      |
+|  DeleteItem                        |      X      |
+|  DeleteMessageCode                 |      X      |
+|  DeleteNode_C                      |             |
+|  DeleteNotifyCode                  |      X      |
+|  Destroy                           |      X      |
+|  Dispose                           |      X      |
+|  EditLabel                         |      X      |
+|  EndEditLabel                      |      X      |
+|  EnsureVisible                     |      X      |
+|  EnumChildren                      |      X      |
+|  EnumChildrenRecursive             |      X      |
+|  Expand                            |      X      |
+|  ExpandNotify                      |      X      |
+|  ExpandPartial                     |             |
+|  ExpandRecursive                   |      X      |
+|  ExpandRecursiveNotify             |      X      |
+|  ExpandRecursiveNotifySelective    |      X      |
+|  ExpandRecursiveSelective          |      X      |
+|  GetAdjacentRect                   |      X      |
+|  GetBkColor                        |      X      |
+|  GetChild                          |      X      |
+|  GetCount                          |      X      |
+|  GetEditControl                    |      X      |
+|  GetExtendedStyle                  |      X      |
+|  GetFont                           |      X      |
+|  GetImageList                      |             |
+|  GetIndent                         |             |
+|  GetInsertMarkColor                |             |
+|  GetISearchString                  |             |
+|  GetItem                           |      X      |
+|  GetItemHeight                     |      X      |
+|  GetItemRect                       |      X      |
+|  GetItemState                      |      X      |
+|  GetLineColor                      |             |
+|  GetLineRect                       |             |
+|  GetNext                           |      X      |
+|  GetNode                           |      X      |
+|  GetNode_C                         |      X      |
+|  GetNode_Ptr                       |      X      |
+|  GetParent                         |      X      |
+|  GetPos                            |      X      |
+|  GetRect                           |      X      |
+|  GetRoot                           |             |
+|  GetScrollTime                     |             |
+|  GetSelected                       |      X      |
+|  GetTemplate                       |      X      |
+|  GetTemplateDispInfo               |             |
+|  GetTemplateInfoTip                |             |
+|  GetTemplateItemChange             |             |
+|  GetTemplateKeyDown                |             |
+|  GetTemplateNmtv                   |      X      |
+|  GetText                           |      X      |
+|  GetTextColor                      |             |
+|  GetTooltips                       |             |
+|  GetVisibleCount                   |             |
+|  HasChildren                       |      X      |
+|  Hide                              |      X      |
+|  HitTest                           |      X      |
+|  Insert                            |      X      |
+|  IsAncestor                        |      X      |
+|  IsExpanded                        |      X      |
+|  IsRoot                            |      X      |
+|  MapAccIdToHTreeItem               |             |
+|  MapHTreeItemToAccId               |             |
+|  OnCommand                         |             |
+|  OnMessage                         |      X      |
+|  OnNotify                          |      X      |
+|  Redraw                            |      X      |
+|  RemoveParentSubclass              |      X      |
+|  ScrollToBottom                    |      X      |
+|  ScrollToTop                       |      X      |
+|  Select                            |      X      |
+|  SendBeginDrag                     |             |
+|  SendBeginLabelEdit                |      X      |
+|  SendBeginRDrag                    |             |
+|  SendDeleteItem                    |             |
+|  SendEndLabelEdit                  |      X      |
+|  SendGetDispInfo                   |             |
+|  SendGetInfoTip                    |             |
+|  SendItemChanged                   |             |
+|  SendItemChanging                  |             |
+|  SendItemExpanded                  |      X      |
+|  SendItemExpanding                 |      X      |
+|  SendKeyDown                       |             |
+|  SendSetDispInfo                   |             |
+|  SetAutoScrollInfo                 |             |
+|  SetBkColor                        |             |
+|  SetContextMenu                    |      X      |
+|  SetExtendedStyle                  |             |
+|  SetHeight                         |      X      |
+|  SetImageList                      |             |
+|  SetIndent                         |             |
+|  SetInsertMark                     |             |
+|  SetInsertMarkColor                |             |
+|  SetItem                           |      X      |
+|  SetItemHeight                     |             |
+|  SetItemState                      |      X      |
+|  SetLineColor                      |             |
+|  SetNodeConstructor                |      X      |
+|  SetRedraw                         |      X      |
+|  SetScrollTime                     |             |
+|  SetTextColor                      |             |
+|  SetTooltips                       |             |
+|  Show                              |      X      |
+|  ShowInfoTip                       |             |
+|  SortChildren                      |             |
+|  SortChildrenCb                    |             |
+|  Toggle                            |             |
 
 ## TreeViewEx: Instance properties
 
-|  Name                     |  Is Tested  |
-|  -------------------------|-----------  |
-|  AutoHScroll              |             |
-|  Checkboxes               |             |
-|  DimmedCheckboxes         |             |
-|  DisableDragDrop          |             |
-|  DoubleBuffer             |             |
-|  DrawImageAsync           |             |
-|  EditLabels               |             |
-|  Enabled                  |      X      |
-|  ExclusionCheckboxes      |             |
-|  FadeInOutExpandos        |             |
-|  FullRowselect            |             |
-|  Gui                      |      X      |
-|  HandlerChildrenGet       |             |
-|  HandlerGetDispInfo       |             |
-|  HandlerImageGet          |             |
-|  HandlerImageSet          |             |
-|  HandlerNameGet           |             |
-|  HandlerNameSet           |             |
-|  HandlerSelectedImageGet  |             |
-|  HandlerSelectedImageSet  |             |
-|  HandlerSetDispInfo       |             |
-|  HasButtons               |             |
-|  HasLines                 |             |
-|  Infotip                  |             |
-|  LinesAtRoot              |             |
-|  MultiSelect              |             |
-|  NoHScroll                |             |
-|  NoIndentState            |             |
-|  NonEvenHeight            |             |
-|  NoScroll                 |             |
-|  NoSingleCollapse         |             |
-|  NoTooltips               |             |
-|  PartialCheckboxes        |             |
-|  RichTooltip              |             |
-|  RtlReading               |             |
-|  ShowSelAlways            |             |
-|  SingleExpand             |             |
-|  TrackSelect              |             |
-|  Visible                  |      X      |
+|  Name                              |  Is Tested  |
+|  ----------------------------------|-----------  |
+|  AutoHScroll                       |             |
+|  Checkboxes                        |             |
+|  ContextMenuActive                 |      X      |
+|  DimmedCheckboxes                  |             |
+|  DisableDragDrop                   |             |
+|  DoubleBuffer                      |             |
+|  DrawImageAsync                    |             |
+|  EditLabels                        |             |
+|  Enabled                           |      X      |
+|  ExclusionCheckboxes               |             |
+|  FadeInOutExpandos                 |             |
+|  FullRowselect                     |             |
+|  Gui                               |      X      |
+|  HandlerChildrenGet                |             |
+|  HandlerGetDispInfo                |             |
+|  HandlerImageGet                   |             |
+|  HandlerImageSet                   |             |
+|  HandlerNameGet                    |             |
+|  HandlerNameSet                    |             |
+|  HandlerSelectedImageGet           |             |
+|  HandlerSelectedImageSet           |             |
+|  HandlerSetDispInfo                |             |
+|  HasButtons                        |             |
+|  HasLines                          |             |
+|  Infotip                           |             |
+|  LinesAtRoot                       |             |
+|  MultiSelect                       |             |
+|  NoHScroll                         |             |
+|  NoIndentState                     |             |
+|  NonEvenHeight                     |             |
+|  NoScroll                          |             |
+|  NoSingleCollapse                  |             |
+|  NoTooltips                        |             |
+|  PartialCheckboxes                 |             |
+|  RichTooltip                       |             |
+|  RtlReading                        |             |
+|  ShowSelAlways                     |             |
+|  SingleExpand                      |             |
+|  TrackSelect                       |             |
+|  Visible                           |      X      |
 
 # TreeViewEx - Tested notification handlers
 

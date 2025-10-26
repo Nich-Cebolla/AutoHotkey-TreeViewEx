@@ -245,3 +245,10 @@ TreeViewEx_CallbackValue_Handle(value) {
 TreeViewEx_CallbackValue_Code(value) {
     return value.Code
 }
+
+/**
+ * A {@link Container} CallbackValue function for the property "Name".
+ */
+TreeViewEx_CallbackValue_Name(value) {
+    return value.Name
+}

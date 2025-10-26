@@ -266,10 +266,9 @@ class TreeViewEx {
             Struct := this.Templates.Get(Struct)
         }
         global g_TreeViewEx_Node := this.NodeConstructor.Call(Params*)
-        local node := g_TreeViewEx_Node
+        node := g_TreeViewEx_Node
         Struct.lParam := ObjPtrAddRef(node)
-        if handle := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
-            node.Handle := handle
+        if node.handle := SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd) {
             g_TreeViewEx_Node := ''
             return node
         } else {
@@ -301,7 +300,7 @@ class TreeViewEx {
             Struct := this.Templates.Get(Struct)
         }
         global g_TreeViewEx_Node := this.NodeConstructor.Call(Params*)
-        local node := g_TreeViewEx_Node
+        node := g_TreeViewEx_Node
         if SetParam {
             Struct.lParam := ObjPtrAddRef(node)
         }
@@ -632,7 +631,6 @@ class TreeViewEx {
         OutExpandedResult := this.SendItemExpanded(Struct)
         return 0
     }
-    CopyItemId(Handle) => A_Clipboard := Handle
     CopyText(Handle) {
         A_Clipboard := this.GetText(Handle)
     }
@@ -645,33 +643,39 @@ class TreeViewEx {
             OnExit(this.CallbackOnExit, -1)
         }
     }
+    DeleteAll() => SendMessage(TVM_DELETEITEM, 0, 0, this.Hwnd)
+    DeleteAll_C() {
+        this.DeleteAll()
+        this.Collection.Length := 0
+    }
+    DeleteChildren(Handle) {
+        while child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+            SendMessage(TVM_DELETEITEM, 0, child, this.Hwnd)
+        }
+    }
     /**
      * Delete all callbacks associated with a command code.
      */
     DeleteCommandCode(CommandCode) {
         this.ParentSubclass.CommandDelete(this.HwndGui, this, CommandCode)
     }
+    DeleteItem(Handle) => SendMessage(TVM_DELETEITEM, 0, Handle, this.Hwnd)
     /**
      * Delete all callbacks associated with a message code.
      */
     DeleteMessageCode(MessageCode) {
         this.ParentSubclass.MessageDelete(this.HwndGui, this, MessageCode)
     }
+    DeleteNode_C(Handle) {
+        this.Collection.Remove(Handle, &node)
+        SendMessage(TVM_DELETEITEM, 0, Handle, this.Hwnd)
+        return node
+    }
     /**
      * Delete all callbacks associated with a notify code.
      */
     DeleteNotifyCode(NotifyCode) {
         this.ParentSubclass.NotifyDelete(this.HwndGui, this, NotifyCode)
-    }
-    DeleteAll() => SendMessage(TVM_DELETEITEM, 0, 0, this.Hwnd)
-    DeleteAll_C() {
-        this.DeleteAll()
-        this.Collection.Length := 0
-    }
-    DeleteItem(Handle) => SendMessage(TVM_DELETEITEM, 0, Handle, this.Hwnd)
-    DeleteNode_C(Handle) {
-        this.Collection.Remove(Handle, &node)
-        return node
     }
     Destroy() => DllCall(g_user32_DestroyWindow, 'ptr', this.Hwnd, 'int')
     Dispose() {
@@ -693,15 +697,24 @@ class TreeViewEx {
         if WinExist(this.Hwnd) {
             this.Destroy()
         }
+        this.Hwnd := 0
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-editlabel}.
-     * @param {Integer} Handle - The id of the item to edit.
+     * @param {Integer} [Handle] - The id of the item to edit. If unset, the currently selected
+     * item is edited.
      * @returns {Integer} - The handle to the edit control that is created for editing the label, or
      * 0 if unsuccessful.
      */
-    EditLabel(Handle) => SendMessage(TVM_EDITLABELW, 0, Handle, this.Hwnd)
-    EditSelectedLabel() => SendMessage(TVM_EDITLABELW, 0, this.GetSelected(), this.Hwnd)
+    EditLabel(Handle?) {
+        if !IsSet(Handle) {
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
+        }
+        if !Handle {
+            return 0
+        }
+        SendMessage(TVM_EDITLABELW, 0, Handle, this.Hwnd)
+    }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-endeditlabelnow}.
      * @param {Boolean} [CancelChanges = false] - Variable that indicates whether the editing is
@@ -832,6 +845,7 @@ class TreeViewEx {
         OutExpandedResult := this.SendItemExpanded(Struct)
         return 0
     }
+    ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, Handle, this.Hwnd)
     /**
      * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
      * @param {Integer} [MaxDepth = TVEX_MAX_RECURSION] - The maximum depth to expand.
@@ -888,125 +902,6 @@ class TreeViewEx {
                 while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
                     if depth < MaxDepth {
                         _RecurseMaxDepth(child)
-                    }
-                }
-            }
-            depth--
-        }
-        _Throw() {
-            throw Error('Sending message ``TVM_GETITEMW`` failed.', -1)
-        }
-    }
-    /**
-     * @param {*} Callback - A `Func` or callable object that is called to determine if a node should
-     * be expanded. The callback does not get called for `Handle`.
-     * - Parameters:
-     *   1. {Integer} The tree-view item handle.
-     *   2. {Integer} The handle to the parent item of #1.
-     *   3. {Integer} The depth at which the tree-view item associated with parameter 1 is located.
-     *      Children of `Handle` are depth 1.
-     *   4. {TreeViewEx} The {@link TreeViewEx} object.
-     * - The function should return one of the following:
-     *   - 0 (or an empty string) : Expand the node and iterate the node's children.
-     *   - 1 : Expand the node but do not iterate the node's children, move on to the next sibling node.
-     *   - 2 : Expand the node and end the function call. {@link TreeViewEx.Prototype.ExpandRecursiveNotifySelective}
-     *     returns `2` to the caller.
-     *   - 3 : Do not expand the node and move on to the next sibling node.
-     *   - Any other number : Do not expand the node and end the function call.
-     *    {@link TreeViewEx.Prototype.ExpandRecursiveNotifySelective} returns the number to the caller.
-     *
-     * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
-     *
-     * @returns {Integer} - One of the following:
-     * - 0 : If `Callback` never returned `2` or `4`.
-     * - 2 : If `Callback` returned `2`.
-     * - 4 : If `Callback` returned `4`.
-     */
-    ExpandRecursiveSelective(Callback, Handle := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
-        flag_unwind := false
-        if Handle {
-            depth := 0
-            _Recurse(Handle)
-        } else {
-            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
-                depth := 1
-                result := Callback(child, Handle, depth, this)
-                switch result, 0 {
-                    case 0, '': _Recurse(child)
-                    case 1:
-                        if this.HasChildren(child, UseCache) {
-                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                        }
-                    case 2:
-                        if this.HasChildren(child, UseCache) {
-                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                        }
-                        return 2
-                    case 3: ; do nothing
-                    default: return result
-                }
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
-                    result := Callback(child, Handle, depth, this)
-                    switch result, 0 {
-                        case 0, '': _Recurse(child)
-                        case 1:
-                            if this.HasChildren(child, UseCache) {
-                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                            }
-                        case 2:
-                            if this.HasChildren(child, UseCache) {
-                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                            }
-                            return 2
-                        case 3: ; do nothing
-                        default: return result
-                    }
-                }
-            }
-        }
-
-        return flag_unwind
-
-        _Recurse(Handle) {
-            local child
-            depth++
-            if this.HasChildren(Handle, UseCache) {
-                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-            }
-            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
-                result := Callback(child, Handle, depth, this)
-                switch result, 0 {
-                    case 0, '': _Recurse(child)
-                    case 1:
-                        if this.HasChildren(child, UseCache) {
-                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                        }
-                    case 2:
-                        if this.HasChildren(child, UseCache) {
-                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                        }
-                        flag_unwind := 2
-                    case 3: ; do nothing
-                    default: flag_unwind := result
-                }
-                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
-                    if flag_unwind {
-                        return
-                    }
-                    result := Callback(child, Handle, depth, this)
-                    switch result, 0 {
-                        case 0, '': _Recurse(child)
-                        case 1:
-                            if this.HasChildren(child, UseCache) {
-                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                            }
-                        case 2:
-                            if this.HasChildren(child, UseCache) {
-                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
-                            }
-                            flag_unwind := 2
-                        case 3: ; do nothing
-                        default: flag_unwind := result
                     }
                 }
             }
@@ -1241,7 +1136,142 @@ class TreeViewEx {
             throw Error('Sending message ``TVM_GETITEMW`` failed.', -1)
         }
     }
-    ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, Handle, this.Hwnd)
+    /**
+     * @param {*} Callback - A `Func` or callable object that is called to determine if a node should
+     * be expanded. The callback does not get called for `Handle`.
+     * - Parameters:
+     *   1. {Integer} The tree-view item handle.
+     *   2. {Integer} The handle to the parent item of #1.
+     *   3. {Integer} The depth at which the tree-view item associated with parameter 1 is located.
+     *      Children of `Handle` are depth 1.
+     *   4. {TreeViewEx} The {@link TreeViewEx} object.
+     * - The function should return one of the following:
+     *   - 0 (or an empty string) : Expand the node and iterate the node's children.
+     *   - 1 : Expand the node but do not iterate the node's children, move on to the next sibling node.
+     *   - 2 : Expand the node and end the function call. {@link TreeViewEx.Prototype.ExpandRecursiveNotifySelective}
+     *     returns `2` to the caller.
+     *   - 3 : Do not expand the node and move on to the next sibling node.
+     *   - Any other number : Do not expand the node and end the function call.
+     *    {@link TreeViewEx.Prototype.ExpandRecursiveNotifySelective} returns the number to the caller.
+     *
+     * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
+     *
+     * @returns {Integer} - One of the following:
+     * - 0 : If `Callback` never returned `2` or `4`.
+     * - 2 : If `Callback` returned `2`.
+     * - 4 : If `Callback` returned `4`.
+     */
+    ExpandRecursiveSelective(Callback, Handle := 0, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        flag_unwind := false
+        if Handle {
+            depth := 0
+            _Recurse(Handle)
+        } else {
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, 0, this.Hwnd) {
+                depth := 1
+                result := Callback(child, Handle, depth, this)
+                switch result, 0 {
+                    case 0, '': _Recurse(child)
+                    case 1:
+                        if this.HasChildren(child, UseCache) {
+                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                        }
+                    case 2:
+                        if this.HasChildren(child, UseCache) {
+                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                        }
+                        return 2
+                    case 3: ; do nothing
+                    default: return result
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    result := Callback(child, Handle, depth, this)
+                    switch result, 0 {
+                        case 0, '': _Recurse(child)
+                        case 1:
+                            if this.HasChildren(child, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                            }
+                        case 2:
+                            if this.HasChildren(child, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                            }
+                            return 2
+                        case 3: ; do nothing
+                        default: return result
+                    }
+                }
+            }
+        }
+
+        return flag_unwind
+
+        _Recurse(Handle) {
+            local child
+            depth++
+            if this.HasChildren(Handle, UseCache) {
+                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+            }
+            if child := SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd) {
+                result := Callback(child, Handle, depth, this)
+                switch result, 0 {
+                    case 0, '': _Recurse(child)
+                    case 1:
+                        if this.HasChildren(child, UseCache) {
+                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                        }
+                    case 2:
+                        if this.HasChildren(child, UseCache) {
+                            SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                        }
+                        flag_unwind := 2
+                    case 3: ; do nothing
+                    default: flag_unwind := result
+                }
+                while child := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, child, this.Hwnd) {
+                    if flag_unwind {
+                        return
+                    }
+                    result := Callback(child, Handle, depth, this)
+                    switch result, 0 {
+                        case 0, '': _Recurse(child)
+                        case 1:
+                            if this.HasChildren(child, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                            }
+                        case 2:
+                            if this.HasChildren(child, UseCache) {
+                                SendMessage(TVM_EXPAND, TVE_EXPAND, child, this.Hwnd)
+                            }
+                            flag_unwind := 2
+                        case 3: ; do nothing
+                        default: flag_unwind := result
+                    }
+                }
+            }
+            depth--
+        }
+        _Throw() {
+            throw Error('Sending message ``TVM_GETITEMW`` failed.', -1)
+        }
+    }
+    /**
+     * Calculates the optimal position to move one rectangle adjacent to another while
+     * ensuring that the `Subject` rectangle stays within the monitor's work area. The properties
+     * { L, T, R, B } of `Subject` are updated with the new values.
+     *
+     * @see {@link RectMoveAdjacent} for parameter information.
+     */
+    GetAdjacentRect(RectObj, Handle?, ContainerRect?, Dimension := 'X', Prefer := '', Padding := 0, InsufficientSpaceAction := 0) {
+        if !IsSet(Handle) {
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
+        }
+        if !Handle {
+            return 0
+        }
+        RectMoveAdjacent(RectObj, this.GetItemRect(Handle), ContainerRect ?? unset, Dimension, Prefer, Padding, InsufficientSpaceAction)
+        return RectObj
+    }
     GetBkColor() => SendMessage(TVM_GETBKCOLOR, 0, 0, this.Hwnd)
     GetChild(Handle := 0) => SendMessage(TVM_GETNEXTITEM, TVGN_CHILD, Handle, this.Hwnd)
     GetCount() => SendMessage(TVM_GETCOUNT, 0, 0, this.Hwnd)
@@ -1255,20 +1285,10 @@ class TreeViewEx {
      */
     GetFont() {
         if !this.HasOwnProp('Font') {
-            this.Font := TreeViewEx_LogFont(this.Hwnd)
+            this.DefineProp('Font', { Value: TreeViewEx_LogFont(this.Hwnd) })
         }
         this.Font.Call()
         return this.Font
-    }
-    GetAdjacentRect(RectObj, Handle?, ContainerRect?, Dimension := 'X', Prefer := '', Padding := 0, InsufficientSpaceAction := 0) {
-        if !IsSet(Handle) {
-            Handle := this.GetSelected()
-        }
-        if !Handle {
-            return 0
-        }
-        RectMoveAdjacent(RectObj, this.GetItemRect(Handle), ContainerRect ?? unset, Dimension, Prefer, Padding, InsufficientSpaceAction)
-        return RectObj
     }
     GetImageList(ImageListType) => SendMessage(TVM_GETIMAGELIST, ImageListType, 0, this.Hwnd)
     GetIndent() => SendMessage(TVM_GETINDENT, 0, 0, this.Hwnd)
@@ -1290,7 +1310,7 @@ class TreeViewEx {
     GetItemRect(Handle?) {
         rc := Rect()
         if !IsSet(Handle) {
-            Handle := this.GetSelected()
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
             if !Handle {
                 throw Error('No item is selected', -1)
             }
@@ -1357,7 +1377,15 @@ class TreeViewEx {
         }
         return item.lParam
     }
-    GetParent(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
+    GetParent(Handle?) {
+        if !IsSet(Handle) {
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
+        }
+        if !Handle {
+            return 0
+        }
+        return SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
+    }
     GetPos(&X?, &Y?, &W?, &H?) {
         rc := WinRect(this.Hwnd, 0)
         rc.ToClient(this.HwndGui, true)
@@ -1368,14 +1396,19 @@ class TreeViewEx {
         return rc
     }
     /**
-     * @param {Integer} [Flag = 0] - A flag that determines what function is called when the
-     * buffer's values are updated using `WinRectGetPos` or `WinRectUpdate`.
-     * - 0 : `GetWindowRect`
-     * - 1 : `GetClientRect`
-     * - 2 : `DwmGetWindowAttribute` passing DWMWA_EXTENDED_FRAME_BOUNDS to dwAttribute.
+     * @returns {WinRect} - A buffer object representing the control's display rect relative to
+     * the parent window. See {@link WinRect}.
      */
-    GetRect(Flag := 0) => WinRect(this.Hwnd, Flag).ToClient(this.HwndGui, true)
-    GetRoot(Handle) => SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, Handle, this.Hwnd)
+    GetRect() => WinRect(this.Hwnd).ToClient(this.HwndGui, true)
+    GetRoot(Handle?) {
+        if !IsSet(Handle) {
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
+        }
+        if !Handle {
+            return 0
+        }
+        return SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, Handle, this.Hwnd)
+    }
     GetScrollTime() => SendMessage(TVM_GETSCROLLTIME, 0, 0, this.Hwnd)
     GetSelected() => SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
     GetTemplate(Name) {
@@ -1758,13 +1791,6 @@ class TreeViewEx {
      * @param {TvInsertStruct} Struct - {@link TvInsertStruct}
      */
     Insert(Struct) => SendMessage(TVM_INSERTITEMW, 0, Struct.Ptr, this.Hwnd)
-    IsExpanded(Handle?) {
-        if !IsSet(Handle) {
-            Handle := this.GetSelected()
-        }
-        return SendMessage(TVM_GETITEMSTATE, Handle, TVIS_EXPANDED, this.Hwnd) & TVIS_EXPANDED
-    }
-    IsRoot(Handle) => !SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
     /**
      * Returns 1 if `HandleDescentant` is a descendant of `HandlePotentialAncestor`.
      *
@@ -1782,13 +1808,13 @@ class TreeViewEx {
      */
     IsAncestor(HandleDescendant?, HandlePotentialAncestor?) {
         if !IsSet(HandleDescendant) {
-            HandleDescendant := this.GetSelected()
+            HandleDescendant := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
             if !HandleDescendant {
                 return 0
             }
         }
         if !IsSet(HandlePotentialAncestor) {
-            HandlePotentialAncestor := this.GetSelected()
+            HandlePotentialAncestor := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
             if !HandlePotentialAncestor {
                 return 0
             }
@@ -1804,6 +1830,13 @@ class TreeViewEx {
         }
         return 0
     }
+    IsExpanded(Handle?) {
+        if !IsSet(Handle) {
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
+        }
+        return SendMessage(TVM_GETITEMSTATE, Handle, TVIS_EXPANDED, this.Hwnd) & TVIS_EXPANDED
+    }
+    IsRoot(Handle) => !SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
     MapAccIdToHTreeItem(AccId) => SendMessage(TVM_MAPACCIDTOHTREEITEM, AccId, 0, this.Hwnd)
     MapHTreeItemToAccId(Handle) => SendMessage(TVM_MAPHTREEITEMTOACCID, Handle, 0, this.Hwnd)
     OnCommand(CommandCode, Callback, AddRemove := 1) {
@@ -1854,6 +1887,13 @@ class TreeViewEx {
     }
     RemoveParentSubclass() {
         this.ParentSubclass.Dispose()
+        this.DeleteProp('ParentSubclass')
+    }
+    ScrollToBottom() {
+        this.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_LASTVISIBLE, 0, this.Hwnd))
+    }
+    ScrollToTop() {
+        this.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, this.Hwnd))
     }
     Select(Handle) => SendMessage(TVM_SELECTITEM, TVGN_CARET, Handle, this.Hwnd)
     SendBeginDrag(Handle, ptDrag?, &OutStruct?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
@@ -2044,6 +2084,7 @@ class TreeViewEx {
     SetInsertMark(Handle, AfterItem := false) => SendMessage(TVM_SETINSERTMARK, AfterItem, Handle, this.Hwnd)
     SetInsertMarkColor(Color) => SendMessage(TVM_SETINSERTMARKCOLOR, 0, Color, this.Hwnd)
     SetItem(Struct) => SendMessage(TVM_SETITEMW, 0, Struct.Ptr, this.Hwnd)
+    SetItemHeight(Height) => SendMessage(TVM_SETITEMHEIGHT, Height, 0, this.Hwnd)
     /**
      * Example setting two states, both true states.
      * @example
@@ -2071,7 +2112,7 @@ class TreeViewEx {
      */
     SetItemState(StateMask, ValueMask := 0, Handle?) {
         if !IsSet(Handle) {
-            Handle := this.GetSelected()
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
         }
         if !Handle {
             return 0
@@ -2083,10 +2124,9 @@ class TreeViewEx {
         struct.state := ValueMask
         return SendMessage(TVM_SETITEMW, 0, struct.Ptr, this.Hwnd)
     }
-    SetItemHeight(Height) => SendMessage(TVM_SETITEMHEIGHT, Height, 0, this.Hwnd)
     SetLabel(Text, Handle?) {
         if !IsSet(Handle) {
-            Handle := this.GetSelected()
+            Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
             if !Handle {
                 throw Error('No item is currently selected.')
             }
@@ -2263,10 +2303,7 @@ class TreeViewEx {
         }
     }
     Font {
-        Get {
-            this.DefineProp('Font', { Value: TreeViewEx_LogFont(this.Hwnd) })
-            return this.Font
-        }
+        Get => this.GetFont()
         Set {
             this.DefineProp('Font', { Value: Value })
         }
@@ -2513,5 +2550,4 @@ class TreeViewEx {
             }
         }
     }
-
 }

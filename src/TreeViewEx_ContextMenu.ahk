@@ -14,6 +14,8 @@ class TreeViewEx_ContextMenu extends MenuEx {
                 available in the description of {@link MenuExItem.Prototype.SetTooltipHandler}.
                 Since we have defined the functions as class instance methods, we can define "Value"
                 with the name of the method.
+
+                Used accelerators: A, B, C, D, E, F, O, P, Q, S, T, W, X, Z
             */
             { Name: 'Copy node ID (&D)', Value: 'SelectCopyNodeId' }
           , { Name: 'Copy label (&C)', Value: 'SelectCopyLabel' }

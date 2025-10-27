@@ -1284,6 +1284,9 @@ class TreeViewEx {
      * @returns {TreeViewEx_LogFont}
      */
     GetFont() {
+        if this.HasOwnProp('__Class') {
+            return ''
+        }
         if !this.HasOwnProp('Font') {
             this.DefineProp('Font', { Value: TreeViewEx_LogFont(this.Hwnd) })
         }

@@ -47,7 +47,7 @@
  * {@link TreeViewEx#ParentSubclass}.
  */
 TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
-    Critical('Off')
+    Critical(-1)
     subclass := ObjFromPtrAddRef(dwRefData)
     switch uMsg {
         case WM_COMMAND:
@@ -73,12 +73,14 @@ TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, d
         case WM_NOTIFY:
             if subclass.flag_Notify {
                 hdr := TvNmHdr.FromPtr(lParam)
-                if collectionCallback := subclass.NotifyGet(hdr.code_int) {
-                    struct := hdr.Cast()
-                    tvex := TreeViewEx.Get(uIdSubclass)
-                    for cb in collectionCallback {
-                        if result := cb(tvex, struct) {
-                            return result
+                if hdr.hwndFrom = uIdSubclass {
+                    if collectionCallback := subclass.NotifyGet(hdr.code_int) {
+                        struct := hdr.Cast()
+                        tvex := TreeViewEx.Get(uIdSubclass)
+                        for cb in collectionCallback {
+                            if result := cb(tvex, struct) {
+                                return result
+                            }
                         }
                     }
                 }
@@ -95,6 +97,7 @@ TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, d
                 }
             }
     }
+    Critical('Off')
     return DllCall(
         g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass
@@ -109,10 +112,10 @@ TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, d
  * Destroys the TreeViewEx object when the control window is destroyed.
  */
 TreeViewEx_ControlSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
-    Critical('Off')
     if uMsg == WM_NCDESTROY {
         TreeViewEx.Get(HwndSubclass).Dispose()
     }
+    Critical('Off')
     return DllCall(
         g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass

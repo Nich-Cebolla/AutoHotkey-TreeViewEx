@@ -12,9 +12,6 @@ class TreeViewEx {
         proto := this.Prototype
         proto.NodeConstructor := proto.Collection := proto.ParentSubclass := proto.Subclass :=
         proto.CallbackOnExit := proto.ContextMenu := ''
-        if !IsSet(TVS_HASBUTTONS) {
-            TreeViewEx_SetConstants()
-        }
         this.ClassName := Buffer(StrPut('SysTreeView32', TVEX_DEFAULT_ENCODING))
         StrPut('SysTreeView32', this.ClassName, TVEX_DEFAULT_ENCODING)
         this.Collection_TVEX := TreeViewExCollection()
@@ -146,6 +143,10 @@ class TreeViewEx {
      * operation can take. Scrolling will be adjusted so that the scroll will take place within the
      * maximum scroll time. A scroll operation may take less time than the maximum.
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-setscrolltime}.
+     *
+     * @param {Boolean} [Options.SkipOptions = false] - If true, the `Options` object does not get passed
+     * to {@link TreeViewEx.Options.Call}. Set this to true only if the object has already been passed
+     * to {@link TreeViewEx.Options.Call}, and so it does not need to be processed again.
      *
      * @param {Integer} [Options.Style = TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER] -
      * The value to pass to the `dwStyle` parameter of CreateWindowExW.
@@ -697,7 +698,6 @@ class TreeViewEx {
         if WinExist(this.Hwnd) {
             this.Destroy()
         }
-        this.Hwnd := 0
     }
     /**
      * {@link https://learn.microsoft.com/en-us/windows/win32/controls/tvm-editlabel}.
@@ -2510,9 +2510,7 @@ class TreeViewEx {
     class Options {
         static __New() {
             this.DeleteProp('__New')
-            if !IsSet(TVS_HASBUTTONS) {
-                TreeViewEx_SetConstants()
-            }
+            TreeViewEx_SetConstants()
             this.Default := {
                 AddExStyle: ''
               , AddStyle: ''
@@ -2532,6 +2530,7 @@ class TreeViewEx {
               , Param: 0
               , Rows: ''
               , ScrollTime: ''
+              , SkipOptions: false
               , Style: TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | WS_BORDER
               , TextColor: ''
               , Width: 100

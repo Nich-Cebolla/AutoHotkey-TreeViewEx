@@ -67,3 +67,21 @@ class TreeViewExCollection_ContextMenuItem extends Container {
         this.Prototype := proto
     }
 }
+
+class PropsInfoTreeCollection_NodeConstructor extends Map {
+    __New(Items*) {
+        this.CaseSense := false
+        if Items.Length {
+            this.Set(Items*)
+        }
+    }
+}
+
+class TreeViewExCollection_TvexTabCollection extends Map {
+    __New(Items*) {
+        this.CaseSense := false
+        if Items.Length {
+            this.Set(Items*)
+        }
+    }
+}

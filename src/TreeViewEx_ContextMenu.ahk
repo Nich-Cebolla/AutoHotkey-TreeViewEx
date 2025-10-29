@@ -93,14 +93,9 @@ class TreeViewEx_ContextMenu extends MenuEx {
         }
     }
     SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        if Item {
-            ; Use the Notify version
-            Ctrl.CollapseRecursiveNotify(Item || 0)
-            return 'Collapsed from node: ' Ctrl.GetText(Item)
-        } else {
-            Ctrl.CollapseRecursiveNotify(0)
-            return 'Collapsed root nodes'
-        }
+        Ctrl.CollapseRecursiveNotify(Item)
+        Ctrl.Redraw()
+        return 'Collapsed from node: ' Ctrl.GetText(Item)
     }
     SelectCopyNodeId(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         A_Clipboard := Item
@@ -115,39 +110,49 @@ class TreeViewEx_ContextMenu extends MenuEx {
     }
     SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         Ctrl.ExpandRecursiveNotify(Item)
+        Ctrl.Redraw()
         return 'Expanded from node: ' Ctrl.GetText(Item)
     }
     SelectSelectParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd)
-        ctrl.Select(handle)
-        ctrl.EnsureVisible(handle)
+        Ctrl.Select(handle)
+        Ctrl.EnsureVisible(handle)
+        Ctrl.Redraw()
         return 'Selected node: ' ctrl.GetText(handle)
     }
     SelectSelectPreviousSibling(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         handle := SendMessage(TVM_GETNEXTITEM, TVGN_PREVIOUS, Item, Ctrl.Hwnd)
-        ctrl.Select(handle)
-        ctrl.EnsureVisible(handle)
+        Ctrl.Select(handle)
+        Ctrl.EnsureVisible(handle)
+        Ctrl.Redraw()
         return 'Selected node: ' ctrl.GetText(handle)
     }
     SelectSelectNextSibling(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Item, Ctrl.Hwnd)
-        ctrl.Select(handle)
-        ctrl.EnsureVisible(handle)
+        Ctrl.Select(handle)
+        Ctrl.EnsureVisible(handle)
+        Ctrl.Redraw()
         return 'Selected node: ' ctrl.GetText(handle)
     }
     SelectCollapseAllRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        ctrl.CollapseRecursiveNotify()
+        Ctrl.CollapseRecursiveNotify()
+        Ctrl.Redraw()
         return 'Collapsed all nodes'
     }
     SelectExpandAllRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        ctrl.ExpandRecursiveNotify()
+        Ctrl.SetRedraw(0)
+        Ctrl.ExpandRecursiveNotify()
+        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, Ctrl.Hwnd))
+        Ctrl.SetRedraw(1)
         return 'Expanded all nodes'
     }
     SelectScrollToTop(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, Ctrl.Hwnd))
+        Ctrl.Redraw()
     }
     SelectScrollToBottom(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_LASTVISIBLE, 0, Ctrl.Hwnd))
+        Ctrl.Redraw()
     }
     SelectCollapseSiblings(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         handle := Item
@@ -158,6 +163,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
         while handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, handle, Ctrl.Hwnd) {
             Ctrl.CollapseNotify(handle)
         }
+        Ctrl.Redraw()
         return 'Collapsed siblings'
     }
     SelectCollapseSiblingsRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
@@ -169,6 +175,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
         while handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, handle, Ctrl.Hwnd) {
             Ctrl.CollapseRecursiveNotify(handle)
         }
+        Ctrl.Redraw()
         return 'Collapsed siblings'
     }
     SelectCollapseParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
@@ -177,6 +184,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
                 return 'Unable to collapse the parent node'
             }
             Ctrl.Select(handle)
+            Ctrl.Redraw()
             return 'Collapsed node: ' Ctrl.GetText(handle)
         }
     }
@@ -184,6 +192,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
         if handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd) {
             Ctrl.CollapseRecursiveNotify(handle)
             Ctrl.Select(handle)
+            Ctrl.Redraw()
             return 'Collapsed from node: ' Ctrl.GetText(handle)
         }
     }

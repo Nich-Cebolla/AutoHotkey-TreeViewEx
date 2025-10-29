@@ -144,30 +144,32 @@ TreeViewEx_CallbackOnExit(Hwnd, *) {
  * Displays the context menu.
  */
 TreeViewEx_HandlerContextMenu(tvex, wParam, lParam, *) {
-    MouseGetPos(&mx, &my)
-    x := lParam & 0xFFFF
-    y := (lParam >> 16) & 0xFFFF
-    ; If the context menu was activated by a keyboard button instead of right-click
-    if x = -1 && y = -1 {
-        handle := tvex.GetSelected()
-        rc := tvex.GetItemRect(handle)
-        x := rc.L
-        y := rc.T
-        IsRightClick := 0
-    ; If the context menu was activated by right-click
-    } else {
-        pt := Point(X, Y)
-        pt.ToClient(tvex.Hwnd, true)
-        if hitTestInfo := tvex.HitTest(pt.X, pt.Y) {
-            handle := hitTestInfo.hItem
+    if tvex.Enabled {
+        MouseGetPos(&mx, &my)
+        x := lParam & 0xFFFF
+        y := (lParam >> 16) & 0xFFFF
+        ; If the context menu was activated by a keyboard button instead of right-click
+        if x = -1 && y = -1 {
+            handle := tvex.GetSelected()
+            rc := tvex.GetItemRect(handle)
+            x := rc.L
+            y := rc.T
+            IsRightClick := 0
+        ; If the context menu was activated by right-click
         } else {
-            handle := 0
+            pt := Point(X, Y)
+            pt.ToClient(tvex.Hwnd, true)
+            if hitTestInfo := tvex.HitTest(pt.X, pt.Y) {
+                handle := hitTestInfo.hItem
+            } else {
+                handle := 0
+            }
+            IsRightClick := 1
+            x := pt.X
+            y := pt.Y
         }
-        IsRightClick := 1
-        x := pt.X
-        y := pt.Y
+        tvex.ContextMenu.Call(tvex, Handle, IsRightClick, X, Y)
     }
-    tvex.ContextMenu.Call(tvex, Handle, IsRightClick, X, Y)
 }
 
 /**
@@ -219,9 +221,11 @@ TreeViewEx_LabelEditSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass
  * Deselects any selected items when the mouse is not on-top of an item.
  */
 TreeViewEx_OnClick(tvex, *) {
-    hitTestInfo := tvex.HitTest()
-    if !hitTestInfo || !hitTestInfo.hItem || !hitTestInfo.OnItemGeneral {
-        tvex.Select(0)
+    if tvex.Enabled {
+        hitTestInfo := tvex.HitTest()
+        if !hitTestInfo || !hitTestInfo.hItem || !hitTestInfo.OnItemGeneral {
+            tvex.Select(0)
+        }
     }
 }
 

@@ -1,6 +1,12 @@
 ﻿
 #SingleInstance force
 #include ..\src\TreeViewEx_Tab.ahk
+; This will run with or without TreeViewEx_ContextMenu
+; The class `TreeViewEx_ContextMenu` is located in file src\TreeViewEx_ContextMenu.ahk
+; but is not included in VENV.ahk.
+#include *i <TreeViewEx_ContextMenu>
+; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GuiResizer.ahk
+#include <GuiResizer>
 
 test_TreeViewEx_Tab()
 
@@ -8,21 +14,34 @@ class test_TreeViewEx_Tab {
 
     static Call() {
         g := this.g := Gui('+Resize', , test_TreeViewEx_Tab_EventHandler())
-        tvexTab := this.tvexTab := TreeViewEx_Tab(g, { opt: 'w400 r15', name: 'tab' })
+        controls := this.controls := []
+        tvexTab := this.tvexTab := TreeViewEx_Tab(g, { opt: 'w400 r15', name: 'tab', CallbackOnChangeAfter: test_TreeViewEx_Tab_CallbackOnChange, Which: 'Tab2' })
         item := this.item := tvexTab.Add('tvex1')
         tvex := item.tvex
         obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, 'tvex1')
         tvex.AddObj(obj)
+        tvexTab.Tab.Resizer := tvex.Resizer := { W: 1, H: 1 }
+        controls.Push(tvex)
         rc := tvexTab.Tab.GetClientWindowRect()
-        tvexTab.Tab.UseTab()
         this.input := g.Add('Edit', 'x' g.MarginX ' y' (rc.B + g.MarginY) ' w' rc.W ' r1 Section vEdtInput')
         g.Add('Button', 'xs section vBtnAdd', 'Add').OnEvent('Click', 'Add')
         g.Add('Button', 'ys vBtnDeleteTab', 'DeleteTab').OnEvent('Click', 'DeleteTab')
         g.Add('Button', 'ys vBtnDeleteTreeViewEx', 'DeleteTreeViewEx').OnEvent('Click', 'DeleteTreeViewEx')
         g.Add('Button', 'ys vBtnHide', 'Hide').OnEvent('Click', 'Hide')
         g.Add('Button', 'ys vBtnShow', 'Show').OnEvent('Click', 'Show')
+        g.Add('Button', 'ys vBtnExit', 'Exit').OnEvent('Click', (*) => ExitApp())
+        resizerObj := { Y: 1 }
+        for ctrl in g {
+            switch Ctrl.Type, 0 {
+                case 'Button', 'Edit': ctrl.Resizer := resizerObj
+            }
+        }
         g.Show()
-        tvex.Redraw()
+        WinRedraw(g.Hwnd)
+        if IsSet(GuiResizer) {
+            g.resizer := GuiResizer(g, , controls)
+            ; { Callback: test_TreeViewEx_Tab_GuiResizerCallback }
+        }
     }
     static Obj := {
         Name: 'obj1'
@@ -62,8 +81,14 @@ class test_TreeViewEx_Tab_EventHandler {
             }
             name := 'tvex' i
         }
-        item := test_TreeViewEx_Tab.tvexTab.Add(name)
+        flag := tvexTab.ActiveControls.Length
+        item := tvexTab.Add(name)
         tvex := item.tvex
+        tvex.Resizer := { W: 1, H: 1 }
+        if !flag {
+            test_TreeViewEx_Tab.controls.Push(tvex)
+            test_TreeViewEx_Tab.g.resizer.Activate(test_TreeViewEx_Tab.controls)
+        }
         obj := test_TreeViewEx_Tab_ObjDeepClone(test_TreeViewEx_Tab.Obj, name)
         tvex.AddObj(obj)
     }
@@ -76,7 +101,19 @@ class test_TreeViewEx_Tab_EventHandler {
             name := tab.GetTabText(count, 100)
         }
         index := tab.FindTab(name)
-        tvexTab.DeleteTab(name)
+        list := tvexTab.DeleteTab(name)
+        resizer := test_TreeViewEx_Tab.g.resizer
+        size := resizer.Size
+        controls := test_TreeViewEx_Tab.controls
+        for item in list {
+            for _item in controls {
+                if item.Hwnd = _item.Hwnd {
+                    controls.RemoveAt(A_Index)
+                    break
+                }
+            }
+        }
+        resizer.Activate(controls)
         if count > 1 {
             test_TreeViewEx_Tab.input.Text := tab.GetTabText(index = count ? index - 1 : index)
         } else {
@@ -85,7 +122,17 @@ class test_TreeViewEx_Tab_EventHandler {
     }
     DeleteTreeViewEx(*) {
         name := test_TreeViewEx_Tab.input.Text || test_TreeViewEx_Tab.tvexTab.Tab.Text
-        test_TreeViewEx_Tab.tvexTab.DeleteTreeViewEx(name)
+        tvex := test_TreeViewEx_Tab.tvexTab.DeleteTreeViewEx(name)
+        resizer := test_TreeViewEx_Tab.g.resizer
+        size := resizer.Size
+        controls := test_TreeViewEx_Tab.controls
+        for item in controls {
+            if item.Hwnd = tvex.Hwnd {
+                controls.RemoveAt(A_Index)
+                break
+            }
+        }
+        resizer.Activate(controls)
     }
     Hide(*) {
         name := test_TreeViewEx_Tab.tvexTab.Tab.Text
@@ -102,6 +149,31 @@ class test_TreeViewEx_Tab_EventHandler {
     }
 }
 
+test_TreeViewEx_Tab_GuiResizerCallback(resizer) {
+    for item in test_TreeViewEx_Tab.tvexTab.ActiveControls {
+        item.tvex.Redraw()
+    }
+}
+
+test_TreeViewEx_Tab_CallbackOnChange(tvexTab, formerActive, newlyActive) {
+    resizer := test_TreeViewEx_Tab.g.resizer
+    size := resizer.Size
+    controls := test_TreeViewEx_Tab.controls
+    for item in formerActive {
+        for list in [ controls, size ] {
+            for _item in list {
+                if item.tvex.Hwnd = _item.Hwnd {
+                    list.RemoveAt(A_Index)
+                    break
+                }
+            }
+        }
+    }
+    for item in newlyActive {
+        controls.Push(item.tvex)
+    }
+    resizer.Activate(controls)
+}
 
 test_TreeViewEx_Tab_ObjDeepClone(Self, n, ConstructorParams?, Depth := 0) {
     GetTarget := IsSet(ConstructorParams) ? _GetTarget2 : _GetTarget1

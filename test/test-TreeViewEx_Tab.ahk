@@ -13,7 +13,8 @@ test_TreeViewEx_Tab()
 class test_TreeViewEx_Tab {
 
     static Call() {
-        g := this.g := Gui('+Resize', , test_TreeViewEx_Tab_EventHandler())
+        this.eventHandler := test_TreeViewEx_Tab_EventHandler()
+        g := this.g := Gui('+Resize', , this.eventHandler)
         controls := this.controls := []
         tvexTab := this.tvexTab := TreeViewEx_Tab(g, { opt: 'w400 r15', name: 'tab', CallbackOnChangeAfter: test_TreeViewEx_Tab_CallbackOnChange, Which: 'Tab2' })
         item := this.item := tvexTab.Add('tvex1')
@@ -40,7 +41,6 @@ class test_TreeViewEx_Tab {
         WinRedraw(g.Hwnd)
         if IsSet(GuiResizer) {
             g.resizer := GuiResizer(g, , controls)
-            ; { Callback: test_TreeViewEx_Tab_GuiResizerCallback }
         }
     }
     static Obj := {
@@ -107,7 +107,7 @@ class test_TreeViewEx_Tab_EventHandler {
         controls := test_TreeViewEx_Tab.controls
         for item in list {
             for _item in controls {
-                if item.Hwnd = _item.Hwnd {
+                if item.tvex.Hwnd = _item.Hwnd {
                     controls.RemoveAt(A_Index)
                     break
                 }
@@ -126,8 +126,8 @@ class test_TreeViewEx_Tab_EventHandler {
         resizer := test_TreeViewEx_Tab.g.resizer
         size := resizer.Size
         controls := test_TreeViewEx_Tab.controls
-        for item in controls {
-            if item.Hwnd = tvex.Hwnd {
+        for tvex in controls {
+            if tvex.Hwnd = tvex.Hwnd {
                 controls.RemoveAt(A_Index)
                 break
             }
@@ -146,12 +146,6 @@ class test_TreeViewEx_Tab_EventHandler {
         tvex := item.tvex
         tvex.Show()
         tvex.Redraw()
-    }
-}
-
-test_TreeViewEx_Tab_GuiResizerCallback(resizer) {
-    for item in test_TreeViewEx_Tab.tvexTab.ActiveControls {
-        item.tvex.Redraw()
     }
 }
 

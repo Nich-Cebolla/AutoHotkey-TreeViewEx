@@ -845,7 +845,27 @@ class TreeViewEx {
         OutExpandedResult := this.SendItemExpanded(Struct)
         return 0
     }
-    ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL, Handle, this.Hwnd)
+    ExpandPartial(Handle) => SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL | TVE_EXPAND, Handle, this.Hwnd)
+    /**
+     * - Sends TVN_ITEMEXPANDINGW with TVE_EXPANDPARTIAL. If the return value is zero or an empty
+     *   string:
+     *   - Sends TVM_EXPAND with TVE_EXPANDPARTIAL.
+     *   - Sends TVN_ITEMEXPANDEDW with TVE_EXPANDPARTIAL.
+     *
+     * @param {Integer} Handle - The tree-view item handle.
+     * @param {VarRef} [OutExpandedResult] - A variable that receives the return value from
+     * `SendMessage` with TVN_ITEMEXPANDEDW.
+     * @returns {Integer} - If `SendMessage` with TVN_ITEMEXPANDINGW returns a nonzero number, returns
+     * that value. Else, returns 0.
+     */
+    ExpandPartialNotify(Handle, &OutExpandedResult?, UseCache := TVEX_SENDNOTIFY_USECACHE) {
+        if result := this.SendItemExpanding(Handle, TVE_EXPANDPARTIAL | TVE_EXPAND, &Struct, UseCache) {
+            return result
+        }
+        SendMessage(TVM_EXPAND, TVE_EXPANDPARTIAL | TVE_EXPAND, Handle, this.Hwnd)
+        OutExpandedResult := this.SendItemExpanded(Struct)
+        return 0
+    }
     /**
      * @param {Integer} [Handle = 0] - The node to expand. If 0, all nodes are expanded.
      * @param {Integer} [MaxDepth = TVEX_MAX_RECURSION] - The maximum depth to expand.

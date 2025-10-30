@@ -15,7 +15,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
                 Since we have defined the functions as class instance methods, we can define "Value"
                 with the name of the method.
 
-                Used accelerators: A, B, C, D, E, F, O, P, Q, S, T, W, X, Z
+                Used accelerators: A, B, C, D, E, F, I, O, P, Q, S, T, W, X, Z
             */
             { Name: 'Copy node ID (&D)', Value: 'SelectCopyNodeId' }
           , { Name: 'Copy label (&C)', Value: 'SelectCopyLabel' }
@@ -27,6 +27,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
           , { Name: 'Collapse siblings recursive (&F)', Value: 'SelectCollapseSiblingsRecursive' }
           , { Name: 'Expand recursive (&X)', Value: 'SelectExpandRecursive' }
           , { Name: 'Expand all recursive (&Z)', Value: 'SelectExpandAllRecursive' }
+          , { Name: 'Expand partial (&I)', Value: 'SelectExpandPartial' }
           , { Name: 'Scroll to top (&T)', Value: 'SelectScrollToTop' }
           , { Name: 'Scroll to bottom (&B)', Value: 'SelectScrollToBottom' }
           , { Name: 'Select parent (&W)', Value: 'SelectSelectParent' }
@@ -49,6 +50,7 @@ class TreeViewEx_ContextMenu extends MenuEx {
             items.Get('Copy label (&C)').Enable()
             items.Get('Expand recursive (&X)').Enable()
             items.Get('Collapse recursive (&S)').Enable()
+            items.Get('Expand partial (&I)').Enable()
             if SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd) {
                 items.Get('Select parent (&W)').Enable()
                 items.Get('Collapse parent (&P)').Enable()
@@ -90,69 +92,36 @@ class TreeViewEx_ContextMenu extends MenuEx {
             items.Get('Select parent (&W)').Disable()
             items.Get('Select previous sibling (&Q)').Disable()
             items.Get('Select next sibling (&E)').Disable()
+            items.Get('Expand partial (&I)').Disable()
         }
-    }
-    SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.CollapseRecursiveNotify(Item)
-        Ctrl.Redraw()
-        return 'Collapsed from node: ' Ctrl.GetText(Item)
-    }
-    SelectCopyNodeId(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        A_Clipboard := Item
-        ; The text that is returned gets displayed in the tooltip.
-        ; The option "ShowTooltips" must be enabled for the tooltips to be displayed.
-        return 'Copied: ' Item
-    }
-    SelectCopyLabel(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        text := Ctrl.GetText(Item)
-        A_Clipboard := text
-        return 'Copied: ' text
-    }
-    SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.ExpandRecursiveNotify(Item)
-        Ctrl.Redraw()
-        return 'Expanded from node: ' Ctrl.GetText(Item)
-    }
-    SelectSelectParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd)
-        Ctrl.Select(handle)
-        Ctrl.EnsureVisible(handle)
-        Ctrl.Redraw()
-        return 'Selected node: ' ctrl.GetText(handle)
-    }
-    SelectSelectPreviousSibling(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        handle := SendMessage(TVM_GETNEXTITEM, TVGN_PREVIOUS, Item, Ctrl.Hwnd)
-        Ctrl.Select(handle)
-        Ctrl.EnsureVisible(handle)
-        Ctrl.Redraw()
-        return 'Selected node: ' ctrl.GetText(handle)
-    }
-    SelectSelectNextSibling(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Item, Ctrl.Hwnd)
-        Ctrl.Select(handle)
-        Ctrl.EnsureVisible(handle)
-        Ctrl.Redraw()
-        return 'Selected node: ' ctrl.GetText(handle)
     }
     SelectCollapseAllRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         Ctrl.CollapseRecursiveNotify()
         Ctrl.Redraw()
         return 'Collapsed all nodes'
     }
-    SelectExpandAllRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.SetRedraw(0)
-        Ctrl.ExpandRecursiveNotify()
-        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, Ctrl.Hwnd))
-        Ctrl.SetRedraw(1)
-        return 'Expanded all nodes'
+    SelectCollapseParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        if handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd) {
+            if Ctrl.CollapseNotify(handle, &result) || result {
+                return 'Unable to collapse the parent node'
+            }
+            Ctrl.Select(handle)
+            Ctrl.Redraw()
+            return 'Collapsed node: ' Ctrl.GetText(handle)
+        }
     }
-    SelectScrollToTop(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, Ctrl.Hwnd))
-        Ctrl.Redraw()
+    SelectCollapseParentRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        if handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd) {
+            Ctrl.CollapseRecursiveNotify(handle)
+            Ctrl.Select(handle)
+            Ctrl.Redraw()
+            return 'Collapsed from node: ' Ctrl.GetText(handle)
+        }
     }
-    SelectScrollToBottom(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_LASTVISIBLE, 0, Ctrl.Hwnd))
+    SelectCollapseRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        Ctrl.CollapseRecursiveNotify(Item)
         Ctrl.Redraw()
+        return 'Collapsed from node: ' Ctrl.GetText(Item)
     }
     SelectCollapseSiblings(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
         handle := Item
@@ -178,22 +147,61 @@ class TreeViewEx_ContextMenu extends MenuEx {
         Ctrl.Redraw()
         return 'Collapsed siblings'
     }
-    SelectCollapseParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        if handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd) {
-            if Ctrl.CollapseNotify(handle, &result) || result {
-                return 'Unable to collapse the parent node'
-            }
-            Ctrl.Select(handle)
-            Ctrl.Redraw()
-            return 'Collapsed node: ' Ctrl.GetText(handle)
-        }
+    SelectCopyLabel(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        text := Ctrl.GetText(Item)
+        A_Clipboard := text
+        return 'Copied: ' text
     }
-    SelectCollapseParentRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
-        if handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd) {
-            Ctrl.CollapseRecursiveNotify(handle)
-            Ctrl.Select(handle)
-            Ctrl.Redraw()
-            return 'Collapsed from node: ' Ctrl.GetText(handle)
-        }
+    SelectCopyNodeId(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        A_Clipboard := Item
+        ; The text that is returned gets displayed in the tooltip.
+        ; The option "ShowTooltips" must be enabled for the tooltips to be displayed.
+        return 'Copied: ' Item
+    }
+    SelectExpandAllRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        Ctrl.SetRedraw(0)
+        Ctrl.ExpandRecursiveNotify()
+        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, Ctrl.Hwnd))
+        Ctrl.SetRedraw(1)
+        return 'Expanded all nodes'
+    }
+    SelectExpandRecursive(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        Ctrl.ExpandRecursiveNotify(Item)
+        Ctrl.Redraw()
+        return 'Expanded from node: ' Ctrl.GetText(Item)
+    }
+    SelectExpandPartial(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        Ctrl.ExpandPartial(Item)
+        Ctrl.Redraw()
+        return 'Expanded from node: ' Ctrl.GetText(Item)
+    }
+    SelectScrollToBottom(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_LASTVISIBLE, 0, Ctrl.Hwnd))
+        Ctrl.Redraw()
+    }
+    SelectScrollToTop(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        Ctrl.EnsureVisible(SendMessage(TVM_GETNEXTITEM, TVGN_ROOT, 0, Ctrl.Hwnd))
+        Ctrl.Redraw()
+    }
+    SelectSelectNextSibling(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXT, Item, Ctrl.Hwnd)
+        Ctrl.Select(handle)
+        Ctrl.EnsureVisible(handle)
+        Ctrl.Redraw()
+        return 'Selected node: ' ctrl.GetText(handle)
+    }
+    SelectSelectParent(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        handle := SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Item, Ctrl.Hwnd)
+        Ctrl.Select(handle)
+        Ctrl.EnsureVisible(handle)
+        Ctrl.Redraw()
+        return 'Selected node: ' ctrl.GetText(handle)
+    }
+    SelectSelectPreviousSibling(Name, ItemPos, MenuObj, GuiObj, Ctrl, Item) {
+        handle := SendMessage(TVM_GETNEXTITEM, TVGN_PREVIOUS, Item, Ctrl.Hwnd)
+        Ctrl.Select(handle)
+        Ctrl.EnsureVisible(handle)
+        Ctrl.Redraw()
+        return 'Selected node: ' ctrl.GetText(handle)
     }
 }

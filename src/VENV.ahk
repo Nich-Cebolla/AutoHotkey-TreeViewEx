@@ -18,6 +18,8 @@
 #include TreeViewEx_LogFont.ahk
 #include TreeViewEx_Node.ahk
 #include TreeViewEx_NodeConstructor.ahk
+#include TreeViewEx_SelectFontIntoDc.ahk
+#include TreeViewEx_Size.ahk
 #include TreeViewEx_Subclass.ahk
 #include TreeViewEx_WindowSubclass.ahk
 #include TreeViewEx.ahk

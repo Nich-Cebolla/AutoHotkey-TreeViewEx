@@ -259,3 +259,85 @@ TreeViewEx_CallbackValue_Code(value) {
 TreeViewEx_CallbackValue_Name(value) {
     return value.Name
 }
+
+/**
+ * Returns an array of {@link TreeViewEx_Size} objects, each representing the text extent of a
+ * non-visible space character. The objects have an additional property added to them "ord", which
+ * is the integer your code can pass to `Chr` to get the space character.
+ *
+ * The characters evaluated by this function are 0x2000 - 0x200F.
+ *
+ * @param {Integer} Context - Either the handle to the window which will be used to obtain a
+ * device context, or a handle to the device context to use.
+ * @param {Boolean} [ContextIsHwnd = true] - If true, `Context` is a window handle. If false,
+ * `Context` is a handle to a device context.
+ * @param {Boolean} [UniqueWidth = true] - If true, only the first character with a given
+ * text extent will be represented in the container; all others are skipped.
+ * @param {Boolean} [NonzeroWidth = true] - If true, zero-width characters are skipped.
+ * @returns {Container} - A container with {@link TreeViewEx_Size} objects with an extra "ord" property
+ * specifying the character associated with the object.
+ */
+TreeViewEx_GetSpaceExtentList(Context, ContextIsHwnd := true, UniqueWidth := true, NonzeroWidth := true) {
+    local c := Container.CbNumber((value) => value.W)
+    , i := TVEX_SPACE_CHAR_START - 1
+    , str, sz
+    if ContextIsHwnd {
+        context := TreeViewEx_SelectFontIntoDc(Context)
+        hdc := context.hdc
+    } else {
+        hdc := Context
+    }
+    if UniqueWidth {
+        sz := TreeViewEx_Size()
+        loop TVEX_SPACE_CHAR_END - i {
+            str := Chr(++i)
+            if DllCall(
+                g_gdi32_GetTextExtentPoint32W
+                , 'Ptr', hdc
+                , 'Ptr', StrPtr(str)
+                , 'Int', StrLen(str)
+                , 'Ptr', sz
+                , 'Int'
+            ) {
+                if sz.W || !NonzeroWidth {
+                    if c.InsertIfAbsent(sz) {
+                        sz.ord := i
+                        sz := TreeViewEx_Size()
+                    }
+                }
+            } else {
+                if ContextIsHwnd {
+                    context()
+                }
+                throw OSError()
+            }
+        }
+    } else {
+        loop TVEX_SPACE_CHAR_END - i {
+            str := Chr(++i)
+            sz := TreeViewEx_Size()
+            if DllCall(
+                g_gdi32_GetTextExtentPoint32W
+                , 'Ptr', hdc
+                , 'Ptr', StrPtr(str)
+                , 'Int', StrLen(str)
+                , 'Ptr', sz
+                , 'Int'
+            ) {
+                if sz.W || !NonzeroWidth {
+                    sz.ord := i
+                    c.Push(sz)
+                }
+            } else {
+                if ContextIsHwnd {
+                    context()
+                }
+                throw OSError()
+            }
+        }
+    }
+    if ContextIsHwnd {
+        context()
+    }
+    return c
+}

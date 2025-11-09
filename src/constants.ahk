@@ -3,12 +3,12 @@
  * Sets the global constant variables.
  *
  * @param {Boolean} [force = false] - When false, if `TreeViewEx_SetConstants` has already been called
- * (more specifically, if `tvex_flag_constants_set` has been set), the function returns immediately.
+ * (more specifically, if `TreeViewEx_constants_set` has been set), the function returns immediately.
  * If true, the function executes in its entirety.
  */
-TreeViewEx_SetConstants(force := false) {
+TreeViewEx_SetConstants(force := false, font := false, customDraw := false) {
     global
-    if IsSet(tvex_flag_constants_set) && !force {
+    if IsSet(TreeViewEx_constants_set) && !force {
         return
     }
     g_comctl32_DefSubclassProc :=
@@ -477,6 +477,42 @@ TreeViewEx_SetConstants(force := false) {
     ; WM_WINDOWPOSCHANGED                         := 0x0047     ; Z-order / position changes.                   Adjust or lock layout behavior.
     ; WM_WINDOWPOSCHANGING                        := 0x0046     ; Z-order / position changes.                   Adjust or lock layout behavior.
 
+    ; https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptrw
+    ; GWL_WNDPROC                                 := -4
+    ; GWL_HINSTANCE                               := -6
+    ; GWL_HWNDPARENT                              := -8
+    ; GWL_STYLE                                   := -16
+    ; GWL_EXSTYLE                                 := -20
+    ; GWL_USERDATA                                := -21
+    ; GWL_ID                                      := -12
+    ; GWLP_WNDPROC                                := -4
+    ; GWLP_HINSTANCE                              := -6
+    ; GWLP_HWNDPARENT                             := -8
+    ; GWLP_USERDATA                               := -21
+    GWLP_ID                                     := -12
+
+	if font {
+		TreeViewEx_SetConstants_Font(force)
+	}
+	if customDraw {
+		TreeViewEx_SetConstants_CustomDraw(force)
+	}
+
+    TreeViewEx_constants_set := 1
+}
+
+/**
+ * Sets the global constant variables.
+ *
+ * @param {Boolean} [force = false] - When false, if `TreeViewEx_SetConstants` has already been called
+ * (more specifically, if `TreeViewEx_constants_font_set` has been set), the function returns immediately.
+ * If true, the function executes in its entirety.
+ */
+TreeViewEx_SetConstants_Font(force := false) {
+    global
+    if IsSet(TreeViewEx_constants_font_set) && !force {
+        return
+    }
     ; https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-logfontw
 	OUT_CHARACTER_PRECIS                        := 2
 	OUT_DEFAULT_PRECIS                          := 0
@@ -587,19 +623,60 @@ TreeViewEx_SetConstants(force := false) {
 	DEVICE_FONTTYPE                             := 0x0002
 	TRUETYPE_FONTTYPE                           := 0x0004
 
-    ; https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptrw
-    ; GWL_WNDPROC                                 := -4
-    ; GWL_HINSTANCE                               := -6
-    ; GWL_HWNDPARENT                              := -8
-    ; GWL_STYLE                                   := -16
-    ; GWL_EXSTYLE                                 := -20
-    ; GWL_USERDATA                                := -21
-    ; GWL_ID                                      := -12
-    ; GWLP_WNDPROC                                := -4
-    ; GWLP_HINSTANCE                              := -6
-    ; GWLP_HWNDPARENT                             := -8
-    ; GWLP_USERDATA                               := -21
-    GWLP_ID                                     := -12
+	TreeViewEx_constants_font_set := true
+}
 
-    tvex_flag_constants_set := 1
+/**
+ * Sets the global constant variables.
+ *
+ * @param {Boolean} [force = false] - When false, if `TreeViewEx_SetConstants` has already been called
+ * (more specifically, if `TreeViewEx_constants_set` has been set), the function returns immediately.
+ * If true, the function executes in its entirety.
+ */
+TreeViewEx_SetConstants_CustomDraw(force := false) {
+    global
+    if IsSet(TreeViewEx_constants_custom_draw_set) && !force {
+        return
+    }
+    CDRF_DODEFAULT             := 0x00000000
+    CDRF_NEWFONT               := 0x00000002
+    CDRF_SKIPDEFAULT           := 0x00000004
+    CDRF_DOERASE               := 0x00000008 ; draw the background
+    CDRF_SKIPPOSTPAINT         := 0x00000100 ; don't draw the focus rect
+
+    CDRF_NOTIFYPOSTPAINT       := 0x00000010
+    CDRF_NOTIFYITEMDRAW        := 0x00000020
+    CDRF_NOTIFYSUBITEMDRAW     := 0x00000020  ; flags are the same, we can distinguish by context
+    CDRF_NOTIFYPOSTERASE       := 0x00000040
+
+    ; drawstage flags
+    ; values under 0x00010000 are reserved for global custom draw values.
+    ; above that are for specific controls
+    CDDS_PREPAINT              := 0x00000001
+    CDDS_POSTPAINT             := 0x00000002
+    CDDS_PREERASE              := 0x00000003
+    CDDS_POSTERASE             := 0x00000004
+    ; the 0x000010000 bit means it's individual item specific
+    CDDS_ITEM                  := 0x00010000
+    CDDS_ITEMPREPAINT          := CDDS_ITEM | CDDS_PREPAINT
+    CDDS_ITEMPOSTPAINT         := CDDS_ITEM | CDDS_POSTPAINT
+    CDDS_ITEMPREERASE          := CDDS_ITEM | CDDS_PREERASE
+    CDDS_ITEMPOSTERASE         := CDDS_ITEM | CDDS_POSTERASE
+    CDDS_SUBITEM               := 0x00020000
+
+    CDIS_SELECTED              := 0x0001
+    CDIS_GRAYED                := 0x0002
+    CDIS_DISABLED              := 0x0004
+    CDIS_CHECKED               := 0x0008
+    CDIS_FOCUS                 := 0x0010
+    CDIS_DEFAULT               := 0x0020
+    CDIS_HOT                   := 0x0040
+    CDIS_MARKED                := 0x0080
+    CDIS_INDETERMINATE         := 0x0100
+    CDIS_SHOWKEYBOARDCUES      := 0x0200
+    CDIS_NEARHOT               := 0x0400
+    CDIS_OTHERSIDEHOT          := 0x0800
+    CDIS_DROPHILITED           := 0x1000
+	
+	TreeViewEx_constants_custom_draw_set := true
 }

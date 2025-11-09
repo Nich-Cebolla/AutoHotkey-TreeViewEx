@@ -11,6 +11,7 @@
 #include constants.ahk
 #include lib.ahk
 #include NmTreeView.ahk
+#include NmTvCustomDraw.ahk
 #include notify-node-c.ahk
 #include notify-node-ptr.ahk
 #include notify-node.ahk

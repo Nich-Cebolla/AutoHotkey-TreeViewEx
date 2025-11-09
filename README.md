@@ -391,8 +391,10 @@ only the marked items have been verified.
 |  SetNodeConstructor                |      X      |
 |  SetRedraw                         |      X      |
 |  SetScrollTime                     |             |
+|  SetStatus                         |      X      |
 |  SetTextColor                      |             |
 |  SetTooltips                       |             |
+|  SetTvexTabId                      |      X      |
 |  Show                              |      X      |
 |  ShowInfoTip                       |             |
 |  SortChildren                      |             |
@@ -442,6 +444,7 @@ only the marked items have been verified.
 |  ShowSelAlways                     |             |
 |  SingleExpand                      |             |
 |  TrackSelect                       |             |
+|  TvexTab                           |      X      |
 |  Visible                           |      X      |
 
 # TreeViewEx - Tested notification handlers

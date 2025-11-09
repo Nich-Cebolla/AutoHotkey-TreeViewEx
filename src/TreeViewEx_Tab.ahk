@@ -13,6 +13,27 @@ class TreeViewEx_Tab {
         proto.ContextMenu := proto.DefaultAddOptions := proto.DefaultTreeViewExOptions :=
         proto.UIATree_NodeConstructor :=
         ''
+        this.Collection := TreeViewExTabCollection()
+    }
+    static Add(TreeViewExTabObj) {
+        if !this.Collection.Has(TreeViewExTabObj.Id) {
+            this.Collection.Set(TreeViewExTabObj.Id, TreeViewExTabObj)
+        }
+    }
+    static Delete(Id) {
+        this.Collection.Delete(Number(Id))
+    }
+    static Get(Id) {
+        return this.Collection.Get(Number(Id))
+    }
+    static GetUid() {
+        loop 100 {
+            n := Random(1, 2 ** 32 - 1)
+            if !this.Collection.Has(n) {
+                return n
+            }
+        }
+        throw Error('Failed to generate a unique id.')
     }
     /**
      * Creates a new {@link TreeViewEx_Tab} object. The purpose of {@link TreeViewEx_Tab} is to
@@ -29,6 +50,26 @@ class TreeViewEx_Tab {
      * 2. The {@link TreeViewEx_Tab} object.
      *
      * The return value is ignored.
+     *
+     * @param {*} [Options.CallbackDelete] - If set, a `Func` or callable object that is called for
+     * every {@link TreeViewEx} control associated with a tab when the tab is deleted.
+     *
+     * The function can have up to two parameters:
+     * 1. {TreeViewEx_Tab.Item} - The new {@link TreeViewEx_Tab.Item} object. Retrieve the control object
+     *   from property {@link TreeViewEx_Tab.Item#tvex}.
+     * 2. {Boolean} - If the tab being deleted is the currently active tab, this parameter is set with
+     *   `1`. Else, this parameter is set with `0`.
+     * 3. {Boolean} - If the tab being deleted is the last tab in tab control's internal collection,
+     *   this parameter is set with `1`. Else, this parameter is set with `0`.
+     * 4. {TreeViewEx_Tab} - The {@link TreeViewEx_Tab} object.
+     *
+     * The return value is ignored.
+     *
+     * When `Options.CallbackDelete` is set, the method {@link TreeViewEx_Tab.Prototype.DeleteTab}
+     * does **not** call {@link TreeViewEx.Prototype.Dispose}. This is to permit your function the
+     * choice whether or not to destroy the control.
+     *
+     * When `Options.CallbackDelete` is not set, the method does call {@link TreeViewEx.Prototype.Dispose}.
      *
      * @param {*} [Options.CallbackOnChangeBefore] - If set, a `Func` or callable object that is called
      * every time the tab changes. The function can have up to three parameters:
@@ -154,6 +195,8 @@ class TreeViewEx_Tab {
      * information about the options.
      */
     __New(GuiObj, Options?, DefaultAddOptions := '', DefaultTreeViewExOptions := '') {
+        this.Id := TreeViewEx_Tab.GetUid()
+        TreeViewEx_Tab.Add(this)
         options := TreeViewEx_Tab.Options(Options ?? unset)
         this.Tab := TabEx(GuiObj, options.Which, options.Opt, options.Tabs || unset)
         this.HwndGui := GuiObj.Hwnd
@@ -168,6 +211,7 @@ class TreeViewEx_Tab {
         this.CallbackAdd := options.CallbackAdd
         this.CallbackOnChangeBefore := options.CallbackOnChangeBefore
         this.CallbackOnChangeAfter := options.CallbackOnChangeAfter
+        this.CallbackDelete := options.CallbackDelete
         if IsObject(options.ContextMenu) {
             this.ContextMenu := options.ContextMenu
         } else if options.ContextMenu && IsSet(TreeViewEx_ContextMenu) {
@@ -214,11 +258,17 @@ class TreeViewEx_Tab {
      * parameter of {@link TreeViewEx_Tab.Prototype.__New} are used as the base, and these `AddOptions`
      * supersede those.
      *
-     * @param {Boolean} [AddOptions.Autosize = true] - If true, whenever the {@link TreeViewEx} control is
-     * enabled its dimensions are adjusted to maintain its position relative to the tab's borders.
+     * @param {Boolean} [AddOptions.Autosize = true] - If true, whenever the {@link TreeViewEx} control
+     * is enabled, its dimensions are adjusted to maintain its position relative to the tab's borders.
      * For example, If another row of tabs is added / removed, the {@link TreeViewEx} control's height
      * is adjusted accordingly. If false, no resizing occurs. This option can be changed by calling
      * {@link TreeViewEx_Tab.Item.Prototype.SetAutosize}.
+     *
+     * @param {Boolean} [AddOptions.CopyActiveFont = true] - If true, whenever a control is added
+     * using {@link TreeViewEx_Tab.Prototype.Add}, the font object from the first control in the arraay
+     * {@link TreeViewEx_Tab#ActiveControls} is cloned and applied to the new control. This option
+     * has no effect when the first control is added and when {@link TreeViewEx_Tab#ActiveControls}
+     * is empty.
      *
      * @param {Integer|String} [AddOptions.CreateTab = true] - If a numeric 1, a new tab is created
      * using `TvexName` as the name. If a string, a new tab is created using `AddOptions.CreateTab`
@@ -327,7 +377,8 @@ class TreeViewEx_Tab {
         } else {
             throw Error('Unable to create the TreeViewEx control because no tabs currently exist.')
         }
-        if tabValue == tab.Value {
+        ; If the new control will be added to the active tab
+        if tabValue = tab.Value {
             if tvexOptions.Style & WS_DISABLED {
                 tvexOptions.Style := tvexOptions.Style & ~WS_DISABLED
             }
@@ -402,6 +453,12 @@ class TreeViewEx_Tab {
                 }
         }
         item := TreeViewEx_Tab.Item(tvex, tab, tabValue, addOptions.Autosize)
+        item.tvex.SetTvexTabId(this.Id)
+        if this.ActiveControls.Length && addOptions.CopyActiveFont {
+            lfNew := item.tvex.GetFont()
+            this.ActiveControls[1].tvex.GetFont().Clone(lfNew, , false)
+            lfNew.Apply()
+        }
         if tabValue = tab.Value {
             this.ActiveControls.Push(item)
             if !DllCall(
@@ -416,9 +473,7 @@ class TreeViewEx_Tab {
             }
             tvex.Redraw()
         } else {
-            for item in this.ActiveControls {
-                item.Enable()
-            }
+            item.Disable()
         }
         this.Collection.Insert(item)
         if IsObject(this.CallbackAdd) {
@@ -439,36 +494,52 @@ class TreeViewEx_Tab {
     DeleteTab(Value, ValueIsName := true, CaseSense := true) {
         tab := this.Tab
         if ValueIsName {
-            Value := tab.FindTab(Value, , , CaseSense)
+            tabValue := tab.FindTab(Value, , , CaseSense)
+        } else {
+            tabValue := Value
         }
-        if !Value {
+        if !tabValue {
             throw ValueError('Tab not found.')
         }
+        flag_isLastTab := tabValue = tab.GetItemCount()
+        flag_isCurrentTab := tabValue = tab.Value
         collection := this.Collection
         list := []
         i := 0
-        loop collection.Length {
-            item := collection[++i]
-            if Value = item.tabValue {
-                list.Push(item)
-                collection.RemoveAt(i--)
-                item.tvex.Dispose()
-            } else if item.tabValue > Value {
-                item.tabValue--
+        if callbackDelete := this.CallbackDelete {
+            loop collection.Length {
+                item := collection[++i]
+                if tabValue = item.tabValue {
+                    list.Push(item)
+                    collection.RemoveAt(i--)
+                    callbackDelete(item, flag_isCurrentTab, flag_isLastTab, this)
+                } else if item.tabValue > tabValue {
+                    item.tabValue--
+                }
+            }
+        } else {
+            loop collection.Length {
+                item := collection[++i]
+                if tabValue = item.tabValue {
+                    list.Push(item)
+                    collection.RemoveAt(i--)
+                    item.tvex.Dispose()
+                } else if item.tabValue > tabValue {
+                    item.tabValue--
+                }
             }
         }
-        if Value = tab.Value {
-            if Value = 1 {
-                if tab.GetItemCount() = 1 {
-                    this.ActiveControls.Length := 0
-                } else {
-                    tab.Value := 2
+        tab.Delete(tabValue)
+        if flag_isCurrentTab {
+            this.ActiveControls.Length := 0
+            if flag_isLastTab {
+                if tab.GetItemCount() {
+                    tab.Value := tabValue - 1
                 }
             } else {
-                tab.Value := 1
+                tab.Value := tabValue
             }
         }
-        tab.Delete(Value)
         TreeViewEx_Tab_OnChange(tab)
         return list
     }
@@ -484,7 +555,9 @@ class TreeViewEx_Tab {
         if item.tabValue = this.Tab.Value {
             active := this.ActiveControls
             if active.Length == 1 {
+                item := active[1]
                 active.Length := 0
+                return item
             } else {
                 for _item in active {
                     if item == _item {
@@ -493,6 +566,17 @@ class TreeViewEx_Tab {
                     }
                 }
             }
+        }
+    }
+    Dispose() {
+        TreeViewEx_Tab.Delete(this.Id)
+        props := []
+        props.Capacity := ObjOwnPropCount(this)
+        for prop in this.OwnProps() {
+            props.Push(prop)
+        }
+        for prop in props {
+            this.DeleteProp(prop)
         }
     }
     /**
@@ -697,6 +781,7 @@ class TreeViewEx_Tab {
     class AddOptions {
         static Default := {
             Autosize: true
+          , CopyActiveFont: true
           , CreateTab: true
           , FitTab: true
           , SetContextMenu: true
@@ -720,13 +805,13 @@ class TreeViewEx_Tab {
     }
     class Item {
         __New(tvex, tab, tabValue, autosize) {
-            this.tvex := tvex
+            this.HwndTvex := tvex.Hwnd
             this.tabValue := tabValue
-            this.hwndTab := tab.Hwnd
+            this.HwndTab := tab.Hwnd
             this.SetAutosize(autosize)
         }
         Disable() {
-            this.tvex.Enabled := this.tvex.Visible := 0
+            this.tvex.SetStatus(false)
         }
         Enable(rc?) {
             if !IsSet(rc) {
@@ -739,10 +824,10 @@ class TreeViewEx_Tab {
                 WinMove(rc.L + diff.L, rc.T + diff.T, rc.W + diff.W, rc.H + diff.H, tvex.Hwnd)
             }
             ; Display the control
-            tvex.Enabled := 1
+            tvex.SetStatus(true)
             if !DllCall(
                 g_user32_SetWindowPos
-              , 'ptr', tvex.Hwnd
+              , 'ptr', this.HwndTvex
               , 'ptr', this.HwndTab
               , 'int', 0, 'int', 0, 'int', 0, 'int', 0
               , 'uint', SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
@@ -772,11 +857,13 @@ class TreeViewEx_Tab {
             Set => this.SetAutosize(Value)
         }
         Name => this.tvex.Name
-        Tab => GuiCtrlFromHwnd(this.hwndTab)
+        Tab => GuiCtrlFromHwnd(this.HwndTab)
+        Tvex => TreeViewEx.Get(this.HwndTvex)
     }
     class Options {
         static Default := {
             CallbackAdd: ''
+          , CallbackDelete: ''
           , CallbackOnChangeBefore: ''
           , CallbackOnChangeAfter: ''
           , CaseSense: false
@@ -814,10 +901,10 @@ TreeViewEx_Tab_CallbackValue_Name(item) {
 TreeViewEx_Tab_OnChange(tab, *) {
     tvexTab := tab.tvexTab
     formerActive := tvexTab.ActiveControls
-    n := tab.Value
+    tabValue := tab.Value
     ActiveControls := tvexTab.ActiveControls := []
     for item in tvexTab.Collection {
-        if n = item.tabValue {
+        if tabValue = item.tabValue {
             ActiveControls.Push(item)
         }
     }
@@ -839,11 +926,20 @@ TreeViewEx_Tab_OnChange(tab, *) {
         tvexTab.CallbackOnChangeAfter.Call(tvexTab, formerActive, ActiveControls)
     }
 }
-TreeViewEx_Tab_Pit_CallbackSetNodeConstructor(collection, PropsInfoTreeObj) {
+TreeViewEx_Tab_Pit_CallbackSetNodeConstructor(collection, PropsInfoTreeObj, PropsInfoTreeOptions) {
     ObjSetBase(PropsInfoTreeObj.NodeConstructor.Prototype, collection.Primary.Prototype)
     for name, constructor in collection {
         _constructor := PropsInfoTreeObj.NodeConstructor_%name% := TreeViewEx_NodeConstructor()
-        _constructor.Prototype := { PropsInfoTreeOptions: PropsInfoTreeObj.PropsInfoTreeOptions, HwndCtrl: PropsInfoTreeObj.Hwnd, __Class: constructor.Prototype.__Class }
+        _constructor.Prototype := { PropsInfoTreeOptions: PropsInfoTreeOptions, HwndCtrl: PropsInfoTreeObj.Hwnd, __Class: constructor.Prototype.__Class }
         ObjSetBase(_constructor.Prototype, constructor.Prototype)
+    }
+}
+
+class TreeViewExTabCollection extends Map {
+    __New(items*) {
+        this.CaseSense := false
+        if items.Length {
+            this.Set(items*)
+        }
     }
 }

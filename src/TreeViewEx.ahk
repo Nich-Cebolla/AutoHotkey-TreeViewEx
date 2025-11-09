@@ -11,7 +11,7 @@ class TreeViewEx {
         this.DeleteProp('__New')
         proto := this.Prototype
         proto.NodeConstructor := proto.Collection := proto.ParentSubclass := proto.Subclass :=
-        proto.CallbackOnExit := proto.ContextMenu := ''
+        proto.CallbackOnExit := proto.ContextMenu := proto.TvexTabId := ''
         this.ClassName := Buffer(StrPut('SysTreeView32', TVEX_DEFAULT_ENCODING))
         StrPut('SysTreeView32', this.ClassName, TVEX_DEFAULT_ENCODING)
         this.Collection_TVEX := TreeViewExCollection()
@@ -691,9 +691,12 @@ class TreeViewEx {
             this.Subclass.Uninstall()
         }
         TreeViewEx.Delete(this.Hwnd)
-        if IsObject(this.CallbackOnExit) {
+        if this.CallbackOnExit {
             OnExit(this.CallbackOnExit, 0)
             this.DeleteProp('CallbackOnExit')
+        }
+        if this.ContextMenu {
+            this.DeleteProp('ContextMenu')
         }
         if WinExist(this.Hwnd) {
             this.Destroy()
@@ -2184,8 +2187,29 @@ class TreeViewEx {
         }
     }
     SetScrollTime(TimeMs) => SendMessage(TVM_SETSCROLLTIME, TimeMs, 0, this.Hwnd)
+    /**
+     * @param {Boolean} Value - When nonzero, does the following:
+     * - Sets {@link TreeViewEx#Enabled} and {@link TreeViewEx#Visible} to `1`.
+     * - Calls `TreeViewExObj.ParentSubclass.WindowSubclass.Install` to activate the SUBCLASSPROC.
+     *
+     * When zero or an empty string, does the following:
+     * - Sets {@link TreeViewEx#Enabled} and {@link TreeViewEx#Visible} to `0`.
+     * - Calls `TreeViewExObj.ParentSubclass.WindowSubclass.Uninstall` to deactivate the SUBCLASSPROC.
+     */
+    SetStatus(Value) {
+        if Value {
+            this.Enabled := this.Visible := 1
+            this.ParentSubclass.WindowSubclass.Install()
+        } else {
+            this.Enabled := this.Visible := 0
+            this.ParentSubclass.WindowSubclass.Uninstall()
+        }
+    }
     SetTextColor(Color) => SendMessage(TVM_SETTEXTCOLOR, 0, Color, this.Hwnd)
     SetTooltips(Handle) => SendMessage(TVM_SETTOOLTIPS, Handle, 0, this.Hwnd)
+    SetTvexTabId(Id) {
+        this.TvexTabId := Id
+    }
     Show() {
         this.Enabled := this.Visible := 1
     }
@@ -2522,6 +2546,7 @@ class TreeViewEx {
             }
         }
     }
+    TvexTab => this.TvexTabId ? TreeViewEx_Tab.Get(this.TvexTabId) : ''
     Visible {
         Get => DllCall(g_user32_IsWindowVisible, 'ptr', this.Hwnd, 'int')
         Set => DllCall(g_user32_ShowWindow, 'ptr', this.Hwnd, 'int', Value ? 4 : 0, 'int')

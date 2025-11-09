@@ -33,6 +33,7 @@ class TvNmHdr extends TreeViewExStructBase {
           , TVN_SELCHANGINGW, NmTreeView
           , TVN_SETDISPINFOW, TvDispInfoEx
           , TVN_SINGLEEXPAND, NmTreeView
+          , NM_CUSTOMDRAW, NmTvCustomDraw
         )
     }
     Cast() {

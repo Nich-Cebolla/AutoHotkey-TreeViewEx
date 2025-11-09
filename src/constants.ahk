@@ -6,7 +6,7 @@
  * (more specifically, if `TreeViewEx_constants_set` has been set), the function returns immediately.
  * If true, the function executes in its entirety.
  */
-TreeViewEx_SetConstants(force := false, font := false, customDraw := false) {
+TreeViewEx_SetConstants(force := false, font := true, customDraw := false) {
     global
     if IsSet(TreeViewEx_constants_set) && !force {
         return
@@ -677,6 +677,6 @@ TreeViewEx_SetConstants_CustomDraw(force := false) {
     CDIS_NEARHOT               := 0x0400
     CDIS_OTHERSIDEHOT          := 0x0800
     CDIS_DROPHILITED           := 0x1000
-	
+
 	TreeViewEx_constants_custom_draw_set := true
 }

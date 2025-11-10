@@ -17,6 +17,7 @@ TreeViewEx_SetConstants(force := false, font := true, customDraw := false) {
     g_gdi32_CreateFontIndirectW :=
     g_gdi32_DeleteObject :=
     g_gdi32_GetObjectW :=
+    g_gdi32_GetTextExtentExPointW :=
     g_gdi32_GetTextExtentPoint32W :=
     g_msvcrt_memmove :=
     g_user32_CreateWindowExW :=
@@ -38,7 +39,7 @@ TreeViewEx_SetConstants(force := false, font := true, customDraw := false) {
       , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'EnableWindow', 'GetDlgCtrlID'
                   , 'GetDpiForWindow', 'IsWindowEnabled', 'IsWindowVisible', 'RedrawWindow'
                   , 'SetWindowLongPtrW', 'SetWindowPos', 'ShowWindow' ]
-      , 'gdi32', [ 'CreateFontIndirectW', 'DeleteObject', 'GetObjectW', 'GetTextExtentPoint32W' ]
+      , 'gdi32', [ 'CreateFontIndirectW', 'DeleteObject', 'GetObjectW', 'GetTextExtentExPointW', 'GetTextExtentPoint32W' ]
     ))
 
 	TVEX_DEFAULT_ENCODING                       := 'cp1200'

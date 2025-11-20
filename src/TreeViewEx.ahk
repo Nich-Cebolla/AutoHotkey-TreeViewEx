@@ -2546,7 +2546,7 @@ class TreeViewEx {
             }
         }
     }
-    TvexTab => this.TvexTabId ? TreeViewEx_Tab.Get(this.TvexTabId) : ''
+    TvexTab => IsSet(TreeViewEx_Tab) && this.TvexTabId ? TreeViewEx_Tab.Get(this.TvexTabId) : ''
     Visible {
         Get => DllCall(g_user32_IsWindowVisible, 'ptr', this.Hwnd, 'int')
         Set => DllCall(g_user32_ShowWindow, 'ptr', this.Hwnd, 'int', Value ? 4 : 0, 'int')

@@ -8,14 +8,17 @@ A completely custom tree-view control for AutoHotkey (AHK).
   <li><a href="#introduction">Introduction</a></li>
   <ol type="A">
     <li><a href="#use-cases">Use cases</a></li>
-    <li><a href="#getting-started">Getting started</a></li>
+  </ol>
+  <li><a href="#getting-started">Getting started</a></li>
+  <ol type="A">
     <li><a href="#dependencies">Dependencies</a></li>
-    <li><a href="#related-libraries">Related libraries</a></li>
-    <li><a href="#examples">Examples</a></li>
-    <ol type="1">
-      <li><a href="#demo">Demo</a></li>
-      <li><a href="#context-menu">Context menu</a></li>
-    </ol>
+    <li><a href="#optional-dependencies">Optional dependencies</a></li>
+  </ol>
+  <li><a href="#related-libraries">Related libraries</a></li>
+  <li><a href="#examples">Examples</a></li>
+  <ol type="A">
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#context-menu">Context menu</a></li>
   </ol>
   <li><a href="#treeviewex_tabahk">TreeViewEx_Tab.ahk</a></li>
   <li><a href="#treeviewex_contextmenuahk">TreeViewEx_ContextMenu.ahk</a></li>
@@ -82,12 +85,13 @@ Check back regularly because I will soon be releasing code that subclasses `Tree
 - Integrate with UIA to view a window's entire UIA tree
 - Inspect UIA element properties and available patterns
 
-## Getting started
+# Getting started
 
-To use the library `#include` [VENV.ahk](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/VENV.ahk).
-VENV.ahk packages all of the files together. To make the library available to any script, I recommend
-this setup:
+To use the library, `#include` [src\VENV.ahk](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/src/VENV.ahk).
+VENV.ahk packages all of the required files together. To make the library available to any script, I
+recommend this setup:
 
+- Prepare the dependencies. See [Dependencies](#dependencies) below.
 - Clone the repository.
   ```cmd
   git clone https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx
@@ -101,10 +105,37 @@ this setup:
 - Add a file TreeViewEx.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
   In the file is a single statement.
   ```ahk
-  #include C:\users\you\path\to\AutoHotkey-TreeViewEx-Active\src\VENV.ahk
+  #include C:\path\to\AutoHotkey-TreeViewEx-Active\src\VENV.ahk
+  ```
+- (Optional) To use TreeViewEx_ContextMenu.ahk:
+  - Clone [MenuEx](https://github.com/Nich-Cebolla/AutoHotkey-MenuEx).
+  - Make a copy of the cloned repository and work with the copy.
+  - Add a file MenuEx.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement.
+  ```ahk
+  #include C:\path\to\AutoHotkey-MenuEx-Active\src\MenuEx.ahk
+  ```
+  - Add a file TreeViewEx_ContextMenu.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement.
+  ```ahk
+  #include C:\path\to\AutoHotkey-TreeViewEx-Active\src\TreeViewEx_ContextMenu.ahk
+  ```
+- (Optional) To use TreeViewEx_Tab.ahk:
+  - Clone [TabEx](https://github.com/Nich-Cebolla/AutoHotkey-TabEx).
+  - Make a copy of the cloned repository and work with the copy.
+  - Add a file TabEx.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement.
+  ```ahk
+  #include C:\path\to\AutoHotkey-TabEx-Active\src\TabEx.ahk
+  ```
+  - Add a file TreeViewEx_Tab.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
+  In the file is a single statement.
+  ```ahk
+  #include C:\path\to\AutoHotkey-TreeViewEx-Active\src\TreeViewEx_Tab.ahk
   ```
 
-With this setup, we can use `#include <TreeViewEx>` from any other script. Also, when we want to test
+With this setup, we can use `#include <TreeViewEx>`, `#include <TreeViewEx_ContextMenu>`, and
+`#include <TreeViewEx_Tab>` from any other script. Also, when we want to test
 updates to the repository, we just need to go into that file and change the path to the VENV.ahk
 file in the git clone, then run our scripts that use `TreeViewEx` to check for errors. Then change
 the path back when done.
@@ -114,20 +145,32 @@ the path back when done.
 `TreeViewEx` requires the following dependencies. I recommend preparing the dependencies with a
 similar approach to the above steps.
 
-- [`Rect`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk)
+- [Rect](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk) - A library that
+  includes AHK wrappers around all of the user32 RECT functions + additional custom rect-related
+  classes and functions. To use:
   - Clone [AutoHotkey-LibV2](https://github.com/Nich-Cebolla/AutoHotkey-LibV2), create a copy of
     the directory to use as your active copy, then create a file Rect.ahk in your lib folder
-    with `#include C:\users\you\path\to\AutoHotkey-LibV2-Active\structs\Rect.ahk`.
-- [`LibraryManager`](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk)
+    with `#include C:\path\to\AutoHotkey-LibV2-Active\structs\Rect.ahk`.
+- [LibraryManager](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk)
   - `LibraryManager` is also in AutoHotkey-LibV2, so just create a file LibraryManager.ahk in your
-    lib folder with `#include C:\users\you\path\to\AutoHotkey-LibV2-Active\LibraryManager.ahk`.
-- [`Container`](https://github.com/Nich-Cebolla/AutoHotkey-Container)
-  - Clone [`Container`](https://github.com/Nich-Cebolla/AutoHotkey-Container), create a copy of the
+    lib folder with `#include C:\path\to\AutoHotkey-LibV2-Active\LibraryManager.ahk`.
+- [Container](https://github.com/Nich-Cebolla/AutoHotkey-Container)
+  - Clone [Container](https://github.com/Nich-Cebolla/AutoHotkey-Container), create a copy of the
     directory to use as your active copy, then create a file Container.ahk in your lib folder
-    with `#include C:\users\you\path\to\Container-Active\src\Container.ahk`.
+    with `#include C:\path\to\Container-Active\src\Container.ahk`.
 
+## Optional dependencies
 
-## Related libraries
+The TreeViewEx library includes two optional scripts that extend `TreeViewEx` with additional
+functionality.
+- TreeViewEx_ContextMenu.ahk - A class that adds a context menu with many default functions. Adding
+  additional functions is very easy. Requires:
+  - [MenuEx](https://github.com/Nich-Cebolla/AutoHotkey-MenuEx)
+- TreeViewEx_Tab.ahk - A class that adds a tab control to the gui and offers methods for creating
+  additional tabs with `TreeViewEx` controls. Requires:
+  - [TabEx](https://github.com/Nich-Cebolla/AutoHotkey-TabEx) - A class that extends the AHK `Gui.Tab` class.
+
+# Related libraries
 
 - [`ImageList`:](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/GDI/ImageList.ahk)
 Create an `ImageList` from an array of file paths or an array of bitmap pointers. For use with
@@ -143,9 +186,9 @@ available on the system, check out Logfont.
 - [`MenuEx`:](https://github.com/Nich-Cebolla/AutoHotkey-MenuEx) - A class that streamlines the process
 of creating a context menu. See file test\demo-context-menu.ahk for an example.
 
-## Examples
+# Examples
 
-### Demo
+## Demo
 
 See the demo script
 [test\demo-NotificationHandlers](https://github.com/Nich-Cebolla/AutoHotkey-TreeViewEx/blob/main/test/demo-NotificationHandlers.ahk)
@@ -165,7 +208,7 @@ notifications are handled in the demo:
 - [TVN_SETDISPINFOW](https://learn.microsoft.com/en-us/windows/win32/controls/tvn-setdispinfo)
 - [NM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/nm-click-tree-view)
 
-### Context menu
+## Context menu
 
 See test\demo-context-menu.ahk for an example of using [`TreeViewEx_ContextMenu`](#treeviewex_contextmenuahk)
 
@@ -186,7 +229,7 @@ for using the class:
 2. Add a file TreeViewEx_Tab.ahk to your [lib folder](https://www.autohotkey.com/docs/v2/Scripts.htm#lib).
   In the file is a single statement.
     ```ahk
-    #include C:\users\you\path\to\AutoHotkey-TreeViewEx-Active\src\TreeViewEx_Tab.ahk
+    #include C:\path\to\AutoHotkey-TreeViewEx-Active\src\TreeViewEx_Tab.ahk
     ```
 3. In your script that will use `TreeViewEx_Tab`, include:
     ```ahk

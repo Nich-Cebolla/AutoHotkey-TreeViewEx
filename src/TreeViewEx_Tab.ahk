@@ -227,8 +227,8 @@ class TreeViewEx_Tab {
             if options.PropsInfoTreeContextMenu {
                 this.SetPropsInfoTreeContextMenu(IsObject(options.PropsInfoTreeContextMenu) ? options.PropsInfoTreeContextMenu : unset)
             }
-            if HasProp(DefaultTreeViewExOptions, 'DefaultPropsInfoTreeOptions') {
-                this.SetDefaultPropsInfoTreeOptions(DefaultTreeViewExOptions.DefaultPropsInfoTreeOptions, options.SetPropsInfoTreeNodeConstructor)
+            if options.DefaultPropsInfoTreeOptions {
+                this.SetDefaultPropsInfoTreeOptions(options.DefaultPropsInfoTreeOptions, options.SetPropsInfoTreeNodeConstructor)
             } else if options.SetPropsInfoTreeNodeConstructor {
                 this.SetDefaultPropsInfoTreeOptions()
             }

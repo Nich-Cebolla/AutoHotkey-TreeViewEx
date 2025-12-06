@@ -47,6 +47,9 @@
  * {@link TreeViewEx#ParentSubclass}.
  */
 TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
+    if !HasMethod(Object, 'Call') {
+        return
+    }
     originalCritical := Critical(-1)
     subclass := ObjFromPtrAddRef(dwRefData)
     switch uMsg {

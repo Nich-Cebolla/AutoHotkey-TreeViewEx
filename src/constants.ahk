@@ -11,6 +11,9 @@ TreeViewEx_SetConstants(force := false, font := true, customDraw := false) {
     if IsSet(TreeViewEx_constants_set) && !force {
         return
     }
+    if InStr(DllCall('GetCommandLine', 'str'), '/Debug') < InStr(DllCall('GetCommandLine', 'str'), A_ScriptName) {
+        OnError(__TreeViewEx_OnError, 1)
+    }
     g_comctl32_DefSubclassProc :=
     g_comctl32_RemoveWindowSubclass :=
     g_comctl32_SetWindowSubclass :=
@@ -680,4 +683,10 @@ TreeViewEx_SetConstants_CustomDraw(force := false) {
     CDIS_DROPHILITED           := 0x1000
 
 	TreeViewEx_constants_custom_draw_set := true
+}
+; This is a workaround of an issue that occurs when exiting a script from a debugger.
+__TreeViewEx_OnError(thrown, *) {
+    if thrown.Message = 'This value of type "Object" has no method named "Call".' {
+        return 1
+    }
 }

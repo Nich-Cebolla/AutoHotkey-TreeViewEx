@@ -62,7 +62,7 @@ class TreeViewExCollection_Template extends Map {
 class TreeViewExCollection_ContextMenuItem extends Container {
     static __New() {
         this.DeleteProp('__New')
-        proto := Container.CbNumber(TreeViewEx_CallbackValue_Name)
+        proto := Container.CbString(TreeViewEx_CallbackValue_Name, , LINGUISTIC_IGNORECASE)
         proto.__Class := this.Prototype.__Class
         this.Prototype := proto
     }

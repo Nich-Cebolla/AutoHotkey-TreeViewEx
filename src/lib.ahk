@@ -339,6 +339,40 @@ TreeViewEx_GetSpaceExtentList(Context, ContextIsHwnd := true, UniqueWidth := tru
             }
         }
     }
+    str := '...'
+    sz := TreeViewEx_Size()
+    if DllCall(
+        g_gdi32_GetTextExtentPoint32W
+        , 'Ptr', hdc
+        , 'Ptr', StrPtr(str)
+        , 'Int', StrLen(str)
+        , 'Ptr', sz
+        , 'Int'
+    ) {
+        c.Ellipses := sz
+    } else {
+        if ContextIsHwnd {
+            context()
+        }
+        throw OSError()
+    }
+    str := '"'
+    sz := TreeViewEx_Size()
+    if DllCall(
+        g_gdi32_GetTextExtentPoint32W
+        , 'Ptr', hdc
+        , 'Ptr', StrPtr(str)
+        , 'Int', StrLen(str)
+        , 'Ptr', sz
+        , 'Int'
+    ) {
+        c.Quote := sz
+    } else {
+        if ContextIsHwnd {
+            context()
+        }
+        throw OSError()
+    }
     if ContextIsHwnd {
         context()
     }

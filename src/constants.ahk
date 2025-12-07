@@ -22,6 +22,7 @@ TreeViewEx_SetConstants(force := false, font := true, customDraw := false) {
     g_gdi32_GetObjectW :=
     g_gdi32_GetTextExtentExPointW :=
     g_gdi32_GetTextExtentPoint32W :=
+    g_msvcrt__wcsrev :=
     g_msvcrt_memmove :=
     g_user32_CreateWindowExW :=
     g_user32_DestroyWindow :=
@@ -38,7 +39,7 @@ TreeViewEx_SetConstants(force := false, font := true, customDraw := false) {
 
     TreeViewEx.LibToken := LibraryManager(Map(
         'comctl32', [ 'DefSubclassProc', 'RemoveWindowSubclass', 'SetWindowSubclass' ]
-      , 'msvcrt', [ 'memmove' ]
+      , 'msvcrt', [ 'memmove', '_wcsrev' ]
       , 'user32', [ 'CreateWindowExW', 'DestroyWindow', 'EnableWindow', 'GetDlgCtrlID'
                   , 'GetDpiForWindow', 'IsWindowEnabled', 'IsWindowVisible', 'RedrawWindow'
                   , 'SetWindowLongPtrW', 'SetWindowPos', 'ShowWindow' ]

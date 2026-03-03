@@ -200,7 +200,7 @@ class TreeViewEx_Tab {
         options := TreeViewEx_Tab.Options(Options ?? unset)
         this.Tab := TabEx(GuiObj, options.Which, options.Opt, options.Tabs || unset)
         this.HwndGui := GuiObj.Hwnd
-        this.Collection := Container.CbString(TreeViewEx_Tab_CallbackValue_Name, , options.CaseSense ? 0 : LINGUISTIC_IGNORECASE)
+        this.Collection := Container.CbString(TreeViewEx_Tab_CallbackValue_Name, , options.CaseSense ? 0 : NORM_IGNORECASE)
         this.DefaultAddOptions := TreeViewEx_Tab.AddOptions(DefaultAddOptions)
         this.DefaultTreeViewExOptions := DefaultTreeViewExOptions
         this.Tab.TvexTab := this

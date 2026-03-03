@@ -47,60 +47,59 @@
  * {@link TreeViewEx#ParentSubclass}.
  */
 TreeViewEx_ParentSubclassProc(HwndSubclass, uMsg, wParam, lParam, uIdSubclass, dwRefData) {
-    if !HasMethod(Object, 'Call') {
-        return
-    }
-    originalCritical := Critical(-1)
-    subclass := ObjFromPtrAddRef(dwRefData)
-    switch uMsg {
-        case WM_COMMAND:
-            ; In this case, we don't need the control ID (low word wParam value). The control ID
-            ; has the advantage of being defined by the application and consistent across sessions,
-            ; whereas the hwnd changes every time the control is created.
-            ; For example, if I create a custom dialogue with an OK button, I would assign the same
-            ; ID to the button every time it is created. Then, in my window procedure, I can target
-            ; the button using that ID. In the case of this function and the TreeViewEx library,
-            ; control IDs are not used (unless defined by the caller) and the "OnCommand" logic
-            ; targets the control using the parent hwnd (HwndSubclass) and control hwnd
-            ; (uIdSubclass).
-            if subclass.flag_Command {
-                if collectionCallback := subclass.CommandGet((wParam >> 16) & 0xFFFF) {
-                    tvex := TreeViewEx.Get(uIdSubclass)
-                    for cb in collectionCallback {
-                        if result := cb(tvex) {
-                            return result
-                        }
-                    }
-                }
-            }
-        case WM_NOTIFY:
-            if subclass.flag_Notify {
-                hdr := TvNmHdr.FromPtr(lParam)
-                if hdr.hwndFrom = uIdSubclass {
-                    if collectionCallback := subclass.NotifyGet(hdr.code_int) {
-                        struct := hdr.Cast()
+    if HasMethod(Object, 'Call') {
+        originalCritical := Critical(-1)
+        subclass := ObjFromPtrAddRef(dwRefData)
+        switch uMsg {
+            case WM_COMMAND:
+                ; In this case, we don't need the control ID (low word wParam value). The control ID
+                ; has the advantage of being defined by the application and consistent across sessions,
+                ; whereas the hwnd changes every time the control is created.
+                ; For example, if I create a custom dialogue with an OK button, I would assign the same
+                ; ID to the button every time it is created. Then, in my window procedure, I can target
+                ; the button using that ID. In the case of this function and the TreeViewEx library,
+                ; control IDs are not used (unless defined by the caller) and the "OnCommand" logic
+                ; targets the control using the parent hwnd (HwndSubclass) and control hwnd
+                ; (uIdSubclass).
+                if subclass.flag_Command {
+                    if collectionCallback := subclass.CommandGet((wParam >> 16) & 0xFFFF) {
                         tvex := TreeViewEx.Get(uIdSubclass)
                         for cb in collectionCallback {
-                            if result := cb(tvex, struct) {
+                            if result := cb(tvex) {
                                 return result
                             }
                         }
                     }
                 }
-            }
-        default:
-            if subclass.flag_Message {
-                if collectionCallback := subclass.MessageGet(uMsg) {
-                    tvex := TreeViewEx.Get(uIdSubclass)
-                    for cb in collectionCallback {
-                        if result := cb(tvex, wParam, lParam, uMsg, HwndSubclass) {
-                            return result
+            case WM_NOTIFY:
+                if subclass.flag_Notify {
+                    hdr := TvNmHdr.FromPtr(lParam)
+                    if hdr.hwndFrom = uIdSubclass {
+                        if collectionCallback := subclass.NotifyGet(hdr.code_int) {
+                            struct := hdr.Cast()
+                            tvex := TreeViewEx.Get(uIdSubclass)
+                            for cb in collectionCallback {
+                                if result := cb(tvex, struct) {
+                                    return result
+                                }
+                            }
                         }
                     }
                 }
-            }
+            default:
+                if subclass.flag_Message {
+                    if collectionCallback := subclass.MessageGet(uMsg) {
+                        tvex := TreeViewEx.Get(uIdSubclass)
+                        for cb in collectionCallback {
+                            if result := cb(tvex, wParam, lParam, uMsg, HwndSubclass) {
+                                return result
+                            }
+                        }
+                    }
+                }
+        }
+        Critical(originalCritical)
     }
-    Critical(originalCritical)
     return DllCall(
         g_comctl32_DefSubclassProc
       , 'ptr', HwndSubclass

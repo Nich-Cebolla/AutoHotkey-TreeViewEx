@@ -175,7 +175,7 @@ class TreeViewEx {
     __New(GuiObj, Options?) {
         options := TreeViewEx.Options(Options ?? unset)
         this.HwndGui := GuiObj.Hwnd
-        rc := WinRect(GuiObj.Hwnd, 1)
+        rc := TreeViewEx_WinRect(GuiObj.Hwnd, 1)
         if IsNumber(options.WindowName) {
             windowName := options.WindowName
         } else {
@@ -640,8 +640,10 @@ class TreeViewEx {
         this.ParentSubclass := TreeViewEx_Subclass(TreeViewEx_ParentSubclassProc, this.HwndGui, this.Hwnd)
         this.Subclass := TreeViewEx_WindowSubclass(TreeViewEx_ControlSubclassProc, this.Hwnd)
         if SetOnExit {
-            this.CallbackOnExit := TreeViewEx_CallbackOnExit.Bind(this.Hwnd)
-            OnExit(this.CallbackOnExit, -1)
+            if !this.CallbackOnExit {
+                this.CallbackOnExit := TreeViewEx_CallbackOnExit.Bind(this.Hwnd)
+                OnExit(this.CallbackOnExit, -1)
+            }
         }
     }
     DeleteAll() => SendMessage(TVM_DELETEITEM, 0, 0, this.Hwnd)
@@ -1283,7 +1285,7 @@ class TreeViewEx {
      * ensuring that the `Subject` rectangle stays within the monitor's work area. The properties
      * { L, T, R, B } of `Subject` are updated with the new values.
      *
-     * @see {@link RectMoveAdjacent} for parameter information.
+     * @see {@link TreeViewEx_RectMoveAdjacent} for parameter information.
      */
     GetAdjacentRect(RectObj, Handle?, ContainerRect?, Dimension := 'X', Prefer := '', Padding := 0, InsufficientSpaceAction := 0) {
         if !IsSet(Handle) {
@@ -1292,7 +1294,7 @@ class TreeViewEx {
         if !Handle {
             return 0
         }
-        RectMoveAdjacent(RectObj, this.GetItemRect(Handle), ContainerRect ?? unset, Dimension, Prefer, Padding, InsufficientSpaceAction)
+        TreeViewEx_RectMoveAdjacent(RectObj, this.GetItemRect(Handle), ContainerRect ?? unset, Dimension, Prefer, Padding, InsufficientSpaceAction)
         return RectObj
     }
     GetBkColor() => SendMessage(TVM_GETBKCOLOR, 0, 0, this.Hwnd)
@@ -1334,7 +1336,7 @@ class TreeViewEx {
     GetItem(Struct) => SendMessage(TVM_GETITEMW, 0, Struct.Ptr, this.Hwnd)
     GetItemHeight() => SendMessage(TVM_GETITEMHEIGHT, 0, 0, this.Hwnd)
     GetItemRect(Handle?) {
-        rc := Rect()
+        rc := TreeViewEx_Rect()
         if !IsSet(Handle) {
             Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
             if !Handle {
@@ -1349,7 +1351,7 @@ class TreeViewEx {
     GetItemState(Handle, Mask) => SendMessage(TVM_GETITEMSTATE, Handle, Mask, this.Hwnd)
     GetLineColor() => SendMessage(TVM_GETLINECOLOR, 0, 0, this.Hwnd)
     GetLineRect(Handle) {
-        rc := Rect()
+        rc := TreeViewEx_Rect()
         NumPut('ptr', Handle, rc, 0)
         if SendMessage(TVM_GETITEMRECT, 0, rc.ptr, this.Hwnd) {
             return rc
@@ -1413,7 +1415,7 @@ class TreeViewEx {
         return SendMessage(TVM_GETNEXTITEM, TVGN_PARENT, Handle, this.Hwnd)
     }
     GetPos(&X?, &Y?, &W?, &H?) {
-        rc := WinRect(this.Hwnd, 0)
+        rc := TreeViewEx_WinRect(this.Hwnd, 0)
         rc.ToClient(this.HwndGui, true)
         X := rc.L
         y := rc.T
@@ -1422,10 +1424,10 @@ class TreeViewEx {
         return rc
     }
     /**
-     * @returns {WinRect} - A buffer object representing the control's display rect relative to
-     * the parent window. See {@link WinRect}.
+     * @returns {TreeViewEx_WinRect} - A buffer object representing the control's display rect relative to
+     * the parent window. See {@link TreeViewEx_WinRect}.
      */
-    GetRect() => WinRect(this.Hwnd).ToClient(this.HwndGui, true)
+    GetRect() => TreeViewEx_WinRect(this.Hwnd).ToClient(this.HwndGui, true)
     GetRoot(Handle?) {
         if !IsSet(Handle) {
             Handle := SendMessage(TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0, this.Hwnd)
@@ -1805,8 +1807,8 @@ class TreeViewEx {
             hitTestInfo.X := X
             hitTestInfo.Y := Y
         } else {
-            pt := Point.FromCursor()
-            pt.ToClient(this.Hwnd, true)
+            pt := TreeViewEx_Point.FromCursor()
+            pt.ScreenToClient(this.Hwnd, true)
             hitTestInfo := TvHitTestInfo(pt)
         }
         SendMessage(TVM_HITTEST, 0, hitTestInfo.Ptr, this.Hwnd)
@@ -1926,7 +1928,7 @@ class TreeViewEx {
         OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
         OutStruct.code := TVN_BEGINDRAGW
         if !IsSet(ptDrag) {
-            ptDrag := Point.FromCursor()
+            ptDrag := TreeViewEx_Point.FromCursor()
         }
         OutStruct.x := ptDrag.X
         OutStruct.y := ptDrag.Y
@@ -1941,7 +1943,7 @@ class TreeViewEx {
         OutStruct := this.GetTemplateNmtv(Handle, true, false, UseCache)
         OutStruct.code := TVN_BEGINRDRAGW
         if !IsSet(ptDrag) {
-            ptDrag := Point.FromCursor()
+            ptDrag := TreeViewEx_Point.FromCursor()
         }
         OutStruct.x := ptDrag.X
         OutStruct.y := ptDrag.Y

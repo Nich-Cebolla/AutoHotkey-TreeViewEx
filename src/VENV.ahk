@@ -4,8 +4,6 @@
 #include <Container>
 ; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk
 #include <LibraryManager>
-; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk
-#include <Rect>
 
 #include Collections.ahk
 #include constants.ahk
@@ -19,10 +17,13 @@
 #include TreeViewEx_LogFont.ahk
 #include TreeViewEx_Node.ahk
 #include TreeViewEx_NodeConstructor.ahk
+#include TreeViewEx_Point.ahk
+#include TreeViewEx_Rect.ahk
 #include TreeViewEx_SelectFontIntoDc.ahk
 #include TreeViewEx_Size.ahk
 #include TreeViewEx_Subclass.ahk
 #include TreeViewEx_WindowSubclass.ahk
+#include TreeViewEx_WinRect.ahk
 #include TreeViewEx.ahk
 #include TreeViewExStructBase.ahk
 #include TvAsyncDraw.ahk

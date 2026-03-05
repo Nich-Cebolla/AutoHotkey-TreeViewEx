@@ -145,12 +145,6 @@ the path back when done.
 `TreeViewEx` requires the following dependencies. I recommend preparing the dependencies with a
 similar approach to the above steps.
 
-- [Rect](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/structs/Rect.ahk) - A library that
-  includes AHK wrappers around all of the user32 RECT functions + additional custom rect-related
-  classes and functions. To use:
-  - Clone [AutoHotkey-LibV2](https://github.com/Nich-Cebolla/AutoHotkey-LibV2), create a copy of
-    the directory to use as your active copy, then create a file Rect.ahk in your lib folder
-    with `#include C:\path\to\AutoHotkey-LibV2-Active\structs\Rect.ahk`.
 - [LibraryManager](https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk)
   - `LibraryManager` is also in AutoHotkey-LibV2, so just create a file LibraryManager.ahk in your
     lib folder with `#include C:\path\to\AutoHotkey-LibV2-Active\LibraryManager.ahk`.

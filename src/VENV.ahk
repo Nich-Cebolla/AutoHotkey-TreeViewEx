@@ -1,10 +1,10 @@
-﻿TreeViewEx_SetConstants()
-
+﻿
 ; https://github.com/Nich-Cebolla/AutoHotkey-Container
 #include <Container>
 ; https://github.com/Nich-Cebolla/AutoHotkey-LibV2/blob/main/LibraryManager.ahk
 #include <LibraryManager>
 
+#include TreeViewEx.ahk
 #include Collections.ahk
 #include constants.ahk
 #include lib.ahk
@@ -24,7 +24,6 @@
 #include TreeViewEx_Subclass.ahk
 #include TreeViewEx_WindowSubclass.ahk
 #include TreeViewEx_WinRect.ahk
-#include TreeViewEx.ahk
 #include TreeViewExStructBase.ahk
 #include TvAsyncDraw.ahk
 #include TvDispInfoEx.ahk

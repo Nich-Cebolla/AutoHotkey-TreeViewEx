@@ -9,6 +9,7 @@
 class TreeViewEx {
     static __New() {
         this.DeleteProp('__New')
+        TreeViewEx_SetConstants()
         proto := this.Prototype
         proto.NodeConstructor := proto.Collection := proto.ParentSubclass := proto.Subclass :=
         proto.CallbackOnExit := proto.ContextMenu := proto.TvexTabId := ''

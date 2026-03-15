@@ -8,6 +8,39 @@
 */
 
 class TreeViewEx_CallbackSetSizeEventHandler {
+    /**
+     * @desc - Intended to be assigned to property {@link GuiResizer#CallbackSetEventHandler}.
+     * Since this class' constructor requires the {@link GuiResizer} instance object, we can't
+     * assign this object to `Options.CallbackSetEventHandler`. We have to create the
+     * {@link GuiResizer} object first, then assign this object to the property
+     * "CallbackSetEventHandler".
+     *
+     * The below example demonstrates how to set this up.
+     *
+     * @example
+     * #include <TreeViewEx>
+     * #include <GuiResizer>
+     *
+     * guiObj := Gui()
+     * tvex := TreeViewEx(guiObj)
+     * ; Set resizer options for the TreeViewEx control
+     * tvex.Resizer := { W: 1, H: 1 }
+     * guiObj.Resizer := GuiResizer(
+     *     guiObj,
+     *     , ; leave unset or include any other options
+     *     [ tvex ]
+     * )
+     * @
+     *
+     * @param {Integer} Hwnd - Bind the {@link TreeViewEx} control's hwnd to this function.
+     *
+     * @param {GuiResizer} GuiResizerObj - The {@link GuiResizer} object.
+     *
+     * @param {Integer} AddRemove - One of the following:
+     * - -1 : Add the event handler to be called before any other event handlers.
+     * - 0 : Disable the event handler.
+     * - 1 : Add the event handler to be called after any other event handlers.
+     */
     __New(GuiResizerObj) {
         this.eventHandler := TreeViewEx_SizeEventHandler(GuiResizerObj.id)
     }

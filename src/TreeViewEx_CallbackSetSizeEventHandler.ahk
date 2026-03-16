@@ -26,27 +26,23 @@ class TreeViewEx_CallbackSetSizeEventHandler {
      * tvex := TreeViewEx(guiObj)
      * ; Set resizer options for the TreeViewEx control
      * tvex.Resizer := { W: 1, H: 1 }
-     * guiResizerObj := GuiResizer(
-     *     guiObj,
-     *     ,
-     *     ,
-     *     true ; to defer calling Activate()
-     * )
+     * guiResizerObj := GuiResizer(guiObj, , , true) ; to defer calling Activate()
      * ; Assign an instance of this class to property "CallbackSetEventHandler"
-     * guiResizerObj.CallbackSetEventHandler := TreeViewEx_CallbackSetEventHandler(guiResizerObj)
+     * guiResizerObj.CallbackSetEventHandler := TreeViewEx_CallbackSetEventHandler(tvex.hwnd, guiResizerObj)
      * ; Call Activate(), passing the TreeViewEx object to the first parameter
      * guiResizerObj.Activate(tvex)
      * @
      *
+     * @param {Integer} Hwnd - Bind the {@link TreeViewEx} control's hwnd to this function.
+     *
      * @param {GuiResizer} GuiResizerObj - The {@link GuiResizer} object.
      */
-    __New(GuiResizerObj) {
+    __New(Hwnd, GuiResizerObj) {
+        this.Hwnd := Hwnd
         this.eventHandler := TreeViewEx_SizeEventHandler(GuiResizerObj.id)
     }
     /**
      * @desc - This enables or disables the Size event handler.
-     *
-     * @param {Integer} Hwnd - Bind the {@link TreeViewEx} control's hwnd to this function.
      *
      * @param {GuiResizer} GuiResizerObj - The {@link GuiResizer} object.
      *
@@ -55,11 +51,11 @@ class TreeViewEx_CallbackSetSizeEventHandler {
      * - 0 : Disable the event handler.
      * - 1 : Add the event handler to be called after any other event handlers.
      */
-    Call(Hwnd, GuiResizerObj, AddRemove) {
-        if TreeViewEx.Collection_TVEX.Find(Hwnd, &tvex) {
+    Call(GuiResizerObj, AddRemove) {
+        if TreeViewEx.Collection_TVEX.Find(this.Hwnd, &tvex) {
             tvex.OnMessage(0x0005, this.eventHandler, AddRemove) ; WM_SIZE
         } else {
-            throw UnsetItemError('Failed to find a value with the input hwnd.', , Hwnd)
+            throw UnsetItemError('Failed to find a value with the input hwnd.', , this.Hwnd)
         }
     }
 }

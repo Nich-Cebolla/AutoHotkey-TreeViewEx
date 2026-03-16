@@ -20,17 +20,31 @@ class TreeViewEx_CallbackSetSizeEventHandler {
      * @example
      * #include <TreeViewEx>
      * #include <GuiResizer>
+     * #include <TreeViewEx_CallbackSetSizeEventHandler>
      *
      * guiObj := Gui()
      * tvex := TreeViewEx(guiObj)
      * ; Set resizer options for the TreeViewEx control
      * tvex.Resizer := { W: 1, H: 1 }
-     * guiObj.Resizer := GuiResizer(
+     * guiResizerObj := GuiResizer(
      *     guiObj,
-     *     , ; leave unset or include any other options
-     *     [ tvex ]
+     *     ,
+     *     ,
+     *     true ; to defer calling Activate()
      * )
+     * ; Assign an instance of this class to property "CallbackSetEventHandler"
+     * guiResizerObj.CallbackSetEventHandler := TreeViewEx_CallbackSetEventHandler(guiResizerObj)
+     * ; Call Activate(), passing the TreeViewEx object to the first parameter
+     * guiResizerObj.Activate(tvex)
      * @
+     *
+     * @param {GuiResizer} GuiResizerObj - The {@link GuiResizer} object.
+     */
+    __New(GuiResizerObj) {
+        this.eventHandler := TreeViewEx_SizeEventHandler(GuiResizerObj.id)
+    }
+    /**
+     * @desc - This enables or disables the Size event handler.
      *
      * @param {Integer} Hwnd - Bind the {@link TreeViewEx} control's hwnd to this function.
      *
@@ -41,9 +55,6 @@ class TreeViewEx_CallbackSetSizeEventHandler {
      * - 0 : Disable the event handler.
      * - 1 : Add the event handler to be called after any other event handlers.
      */
-    __New(GuiResizerObj) {
-        this.eventHandler := TreeViewEx_SizeEventHandler(GuiResizerObj.id)
-    }
     Call(Hwnd, GuiResizerObj, AddRemove) {
         if TreeViewEx.Collection_TVEX.Find(Hwnd, &tvex) {
             tvex.OnMessage(0x0005, this.eventHandler, AddRemove) ; WM_SIZE
